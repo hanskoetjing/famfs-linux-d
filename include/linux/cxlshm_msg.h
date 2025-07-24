@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
-extern int tcp_client_start_impl(char *ip_4_addr, int port);
-extern int send_message_impl(char *message);
-extern int tcp_client_stop_impl(void);
+int tcp_client_start(char *ip_4_addr, int port);
+int send_message(char *message);
+int tcp_client_stop(void);
+int send_one_message(char *ip_4_addr, int port, char *message);

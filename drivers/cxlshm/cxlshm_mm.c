@@ -87,9 +87,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		pr_info("Mapping 0x%llx from mem to 0x%lx (pgoff 0x%lx)\n", pf.val,
 				vmf->address, vmf->pgoff);
 		pr_info("Try to send message\n");
-		tcp_client_start_impl("127.0.0.1", 57580);
-		send_message_impl("SBGN");
-		tcp_client_stop_impl();
+		send_one_message("127.0.0.1", 57580, "SBGN");
 	} else {
 		tcp_client_start_impl("127.0.0.1", 57580);
 		send_message_impl("SBGN");

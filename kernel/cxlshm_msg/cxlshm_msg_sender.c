@@ -13,16 +13,16 @@ static struct sockaddr_in client_sockaddr;
 
 #define MAX_BUFFER_NET			128
 
-static int tcp_client_start_impl(char *ip_4_addr, int port);
-static int send_message_impl(char *message);
-static int tcp_client_stop_impl(void);
+static int tcp_client_start(char *ip_4_addr, int port);
+static int send_message(char *message);
+static int tcp_client_stop(void);
 
 SYSCALL_DEFINE2(tcp_client_start, char __user *, ip_v4_addr, int, open_port) {
 	int ret = strncpy_from_user(ip_4_addr, ip_v4_addr, sizeof(ip_4_addr));
 	if (ret < 0) return -EFAULT;
 	if (ret >= sizeof(ip_4_addr) || ret == 0) return -EINVAL;
 	port = open_port;
-	return tcp_client_start_impl(ip_4_addr, open_port);
+	return tcp_client_start(ip_4_addr, open_port);
 }
 
 SYSCALL_DEFINE1(send_message, char __user *, message) {
@@ -30,14 +30,14 @@ SYSCALL_DEFINE1(send_message, char __user *, message) {
 	int ret = strncpy_from_user(message_buf, message, sizeof(message_buf));
 	if (ret < 0) return -EFAULT;
 	if (ret >= sizeof(message_buf) || ret == 0) return -EINVAL;
-	return send_message_impl(message_buf);
+	return send_message(message_buf);
 }
 
 SYSCALL_DEFINE0(tcp_client_stop) {
-	return tcp_client_stop_impl();
+	return tcp_client_stop();
 }
 
-int tcp_client_start_impl(char *ip_4_addr, int port) {
+int tcp_client_start(char *ip_4_addr, int port) {
 	int ret = 0;
 	if (!client_socket) {
 		ret = sock_create_kern(&init_net, AF_INET, SOCK_STREAM, IPPROTO_TCP, &client_socket);
@@ -56,8 +56,9 @@ int tcp_client_start_impl(char *ip_4_addr, int port) {
 	}
 	return ret;
 }
+EXPORT_SYMBOL(tcp_client_start);
 
-int send_message_impl(char *message) {
+int send_message(char *message) {
 	char msg[MAX_BUFFER_NET] = {0};
 	int len = strscpy(msg, message, sizeof(msg));
 	pr_info("Sending message %s length %d\n", msg, len);
@@ -73,13 +74,27 @@ int send_message_impl(char *message) {
 	}
 	return ret;
 }
+EXPORT_SYMBOL(send_message);
 
-int tcp_client_stop_impl(void) {
+int tcp_client_stop(void) {
+	int ret = 0;
 	if (client_socket) {
 		pr_info("Disconnect from server %s port %d\n", ip_4_addr, port);
-		sock_release(client_socket);
+		ret = sock_release(client_socket);
 		client_socket = NULL;
 	}
 
-	return 0;
+	return ret;
 }
+EXPORT_SYMBOL(tcp_client_stop);
+
+int send_one_message(char *ip_4_addr, int port, char *message) {
+	int ret = 0
+	ret = tcp_client_start(ip_4_addr, port);
+	if (ret >= 0) {
+		ret = send_message(message);
+		ret = tcp_client_stop();
+	}
+	return ret;
+}
+EXPORT_SYMBOL(send_one_message);
