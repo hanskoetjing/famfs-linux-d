@@ -13,9 +13,10 @@ static struct sockaddr_in client_sockaddr;
 
 #define MAX_BUFFER_NET			128
 
-static int tcp_client_start(char *ip_4_addr, int port);
-static int send_message(char *message);
-static int tcp_client_stop(void);
+int tcp_client_start(char *ip_4_addr, int port);
+int send_message(char *message);
+int tcp_client_stop(void);
+int send_one_message(char *ip_4_addr, int port, char *message);
 
 SYSCALL_DEFINE2(tcp_client_start, char __user *, ip_v4_addr, int, open_port) {
 	int ret = strncpy_from_user(ip_4_addr, ip_v4_addr, sizeof(ip_4_addr));
