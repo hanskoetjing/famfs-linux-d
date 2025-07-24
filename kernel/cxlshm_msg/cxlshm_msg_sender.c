@@ -81,7 +81,7 @@ int tcp_client_stop(void) {
 	int ret = 0;
 	if (client_socket) {
 		pr_info("Disconnect from server %s port %d\n", ip_4_addr, port);
-		ret = sock_release(client_socket);
+		sock_release(client_socket);
 		client_socket = NULL;
 	}
 
