@@ -167,7 +167,7 @@ static int get_cxl_device(void) {
 	int l = lookup_daxdev(device_path, &dax_dev_num);
 	if (!l) {
 		pr_info("dax dev num: %d\n", dax_dev_num);
-		//cxl_dax_device = dax_dev_get(dax_dev_num);
+		cxl_dax_device = dax_dev_get(dax_dev_num);
 		if (cxl_dax_device) {
 			pr_info("got dax_device\n");
 			dax_write_cache(cxl_dax_device, false);
