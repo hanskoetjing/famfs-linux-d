@@ -13,6 +13,7 @@
 #include <linux/dax.h>
 #include <linux/ioport.h>
 #include "dax-private.h"
+#include <linux/cxlshm_msg.h>
 
 
 #define DEVICE_NAME             "cxl_mmap"
@@ -79,13 +80,20 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	if (cxl_dax_device->ops == NULL) pr_info("NULL!\n");
 	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
 	if (owned) {
-			pr_info("return val: %ld\n", nr_pages_avail);
-			if (nr_pages_avail < 0) return -ENXIO;
-			pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
-			ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-			pr_info("Mapping 0x%llx from mem to 0x%lx (pgoff 0x%lx)\n", pf.val,
-					vmf->address, vmf->pgoff);
+		pr_info("return val: %ld\n", nr_pages_avail);
+		if (nr_pages_avail < 0) return -ENXIO;
+		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
+		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
+		pr_info("Mapping 0x%llx from mem to 0x%lx (pgoff 0x%lx)\n", pf.val,
+				vmf->address, vmf->pgoff);
+		pr_info("Try to send message\n");
+		tcp_client_start_impl("127.0.0.1", 57580);
+		send_message_impl("SBGN");
+		tcp_client_stop_impl();
 	} else {
+		tcp_client_start_impl("127.0.0.1", 57580);
+		send_message_impl("SBGN");
+		tcp_client_stop_impl();
 		pr_info("Other node is using the same address 0x%llx\n", pf.val);
 		ret = -EAGAIN;
 	}
