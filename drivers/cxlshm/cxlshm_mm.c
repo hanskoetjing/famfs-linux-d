@@ -89,9 +89,6 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		pr_info("Try to send message\n");
 		send_one_message("127.0.0.1", 57580, "SBGN");
 	} else {
-		tcp_client_start_impl("127.0.0.1", 57580);
-		send_message_impl("SBGN");
-		tcp_client_stop_impl();
 		pr_info("Other node is using the same address 0x%llx\n", pf.val);
 		ret = -EAGAIN;
 	}
