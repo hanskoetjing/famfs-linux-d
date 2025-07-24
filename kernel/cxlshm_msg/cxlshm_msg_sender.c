@@ -37,7 +37,7 @@ SYSCALL_DEFINE0(tcp_client_stop) {
 	return tcp_client_stop_impl();
 }
 
-static int tcp_client_start_impl(char *ip_4_addr, int port) {
+int tcp_client_start_impl(char *ip_4_addr, int port) {
 	int ret = 0;
 	if (!client_socket) {
 		ret = sock_create_kern(&init_net, AF_INET, SOCK_STREAM, IPPROTO_TCP, &client_socket);
@@ -57,7 +57,7 @@ static int tcp_client_start_impl(char *ip_4_addr, int port) {
 	return ret;
 }
 
-static int send_message_impl(char *message) {
+int send_message_impl(char *message) {
 	char msg[MAX_BUFFER_NET] = {0};
 	int len = strscpy(msg, message, sizeof(msg));
 	pr_info("Sending message %s length %d\n", msg, len);
@@ -74,7 +74,7 @@ static int send_message_impl(char *message) {
 	return ret;
 }
 
-static int tcp_client_stop_impl(void) {
+int tcp_client_stop_impl(void) {
 	if (client_socket) {
 		pr_info("Disconnect from server %s port %d\n", ip_4_addr, port);
 		sock_release(client_socket);

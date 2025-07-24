@@ -137,32 +137,6 @@ out_path_put:
 	return err;
 }
 
-//taken from famfs kernel code
-static struct dax_device *lookup_daxdevice(const char *pathname) {
-	struct inode *inode;
-	struct path path;
-	int err;
-
-	if (!pathname || !*pathname)
-		return -EINVAL;
-
-	err = kern_path(pathname, LOOKUP_FOLLOW, &path);
-	if (err)
-		return NULL;
-
-	inode = d_backing_inode(path.dentry);
-	if (!S_ISCHR(inode->i_mode)) {
-		err = -EINVAL;
-		goto out_path_put;
-	}
-
-	return container_of(inode, struct dax_device, inode);
-
-out_path_put:
-	path_put(&path);
-	return NULL;
-}
-
 static int get_cxl_device(void) {
 	int l = lookup_daxdev(device_path, &dax_dev_num);
 	if (!l) {
@@ -177,19 +151,6 @@ static int get_cxl_device(void) {
 		
 	} else {
 		pr_info("no dax dev num:\n");
-	}
-	
-	return 0;
-}
-
-static int get_cxl_device_old(void) {
-	cxl_dax_device = lookup_daxdevice(device_path);
-	if (cxl_dax_device) {
-		pr_info("got dax_device\n");
-		dax_write_cache(cxl_dax_device, false);
-	} else {
-		pr_info("no cxl_dax_device\n");
-		return -ENXIO;
 	}
 	
 	return 0;
@@ -227,7 +188,7 @@ static int __init cxl_range_helper_init(void) {
 	//init others
 	strscpy(device_path, "/dev/dax0.0", sizeof(device_path)); //default device, can be altered using ioctl
 	pr_info("using default path: %s\n", device_path);
-	pr_info("get_cxl_range: loaded\n");
+	pr_info("cxlshm_mm: loaded\n");
 	get_cxl_device();
 	dax_pgoff = 0;
 	return 0;
@@ -239,7 +200,7 @@ static void __exit cxl_range_helper_exit(void) {
 	class_destroy(ffs_class);
 	cdev_del(&ffs_cdev);
 	unregister_chrdev_region(dev_num, 1);
-	pr_info("get_cxl_range: unloaded\n"); 
+	pr_info("cxlshm_mm: unloaded\n"); 
 }
 
 
