@@ -245,4 +245,8 @@ source "drivers/cdx/Kconfig"
 
 source "drivers/dpll/Kconfig"
 
+#mmap handler
+source "drivers/cxlshm/Kconfig"
+
+
 endmenu
