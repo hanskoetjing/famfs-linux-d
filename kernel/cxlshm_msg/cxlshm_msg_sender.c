@@ -89,7 +89,7 @@ int tcp_client_stop(void) {
 EXPORT_SYMBOL(tcp_client_stop);
 
 int send_one_message(char *ip_4_addr, int port, char *message) {
-	int ret = 0
+	int ret = 0;
 	ret = tcp_client_start(ip_4_addr, port);
 	if (ret >= 0) {
 		ret = send_message(message);
