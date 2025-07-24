@@ -163,7 +163,7 @@ out_path_put:
 	return NULL;
 }
 
-static int get_cxl_device_old(void) {
+static int get_cxl_device(void) {
 	int l = lookup_daxdev(device_path, &dax_dev_num);
 	if (!l) {
 		pr_info("dax dev num: %d\n", dax_dev_num);
@@ -182,7 +182,7 @@ static int get_cxl_device_old(void) {
 	return 0;
 }
 
-static int get_cxl_device(void) {
+static int get_cxl_device_old(void) {
 	cxl_dax_device = lookup_daxdevice(device_path);
 	if (cxl_dax_device) {
 		pr_info("got dax_device\n");
