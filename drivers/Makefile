@@ -198,3 +198,6 @@ obj-$(CONFIG_CDX_BUS)		+= cdx/
 obj-$(CONFIG_DPLL)		+= dpll/
 
 obj-$(CONFIG_S390)		+= s390/
+
+#cxlshm-diss
+obj-$(CONFIG_CXL_SHMM_HANDLER)		+= cxlshm/

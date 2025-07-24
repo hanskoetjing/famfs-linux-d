@@ -3072,6 +3072,10 @@ config HAVE_ATOMIC_IOMAP
 	def_bool y
 	depends on X86_32
 
+#for cxl shm messaging syscall
+config SHMM_MSG_SYSCALLS
+	def_bool y
+
 source "arch/x86/kvm/Kconfig"
 
 source "arch/x86/Kconfig.assembler"

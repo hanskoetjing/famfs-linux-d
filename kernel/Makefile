@@ -139,6 +139,9 @@ KASAN_SANITIZE_stackleak.o := n
 KCSAN_SANITIZE_stackleak.o := n
 KCOV_INSTRUMENT_stackleak.o := n
 
+#for cxl shm messaging syscall
+obj-$(CONFIG_SHMM_MSG_SYSCALLS)		+= cxlshm_msg/
+
 obj-$(CONFIG_SCF_TORTURE_TEST) += scftorture.o
 
 $(obj)/configs.o: $(obj)/config_data.gz
