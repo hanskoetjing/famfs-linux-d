@@ -77,7 +77,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		run_dax(cxl_dax_device);
 	pr_info("getting pfn from dax mem %d\n", dax_alive(cxl_dax_device));
 	if (cxl_dax_device->ops == NULL) pr_info("NULL!\n");
-	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, 1, DAX_ACCESS, &kaddr, &pf);
+	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
 	if (owned) {
 			pr_info("return val: %ld\n", nr_pages_avail);
 			if (nr_pages_avail < 0) return -ENXIO;
