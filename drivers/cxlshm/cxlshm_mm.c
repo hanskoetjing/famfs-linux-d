@@ -96,6 +96,8 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		o.end.val = pf.val + nr_of_pages - 1;
 		task = rcu_dereference(vma->vm_mm->owner);
 		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
+		volatile struct ownership *on_mem = (volatile struct ownership *) alloc_table_start;
+		on_mem = &o;
 		pr_info("Mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
 				o.end.val, vmf->pgoff);
 		pr_info("Try to send message\n");
@@ -104,7 +106,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		pr_info("Other node is using the same address 0x%llx\n", pf.val);
 		ret = -EAGAIN;
 	}
-	
+	pr_info("PID: %d\n", on_mem->owner_pid);
 	return ret;
 }
 
