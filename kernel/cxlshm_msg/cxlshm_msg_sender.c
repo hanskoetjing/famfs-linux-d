@@ -40,7 +40,7 @@ SYSCALL_DEFINE0(tcp_client_stop) {
 
 int tcp_client_start(char *ip_4_addr, int port) {
 	int ret = 0;
-	if (!client_socket) {
+	if (client_socket->state == SS_FREE) {
 		ret = sock_create_kern(&init_net, AF_INET, SOCK_STREAM, IPPROTO_TCP, &client_socket);
 		if (ret < 0) return ret;
 		memset(&client_sockaddr, 0, sizeof(client_sockaddr));
