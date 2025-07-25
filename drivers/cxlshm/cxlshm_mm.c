@@ -14,6 +14,7 @@
 #include <linux/ioport.h>
 #include "dax-private.h"
 #include <linux/cxlshm_msg.h>
+#include <asm-generic/cacheflush.h>
 
 
 #define DEVICE_NAME             "cxl_mmap"
@@ -24,6 +25,7 @@
 
 #define IOCTL_MAGIC             0xCC
 #define IOCTL_SET_FILE_PATH     _IOW(IOCTL_MAGIC, 0x01, struct cxl_dev_path_struct)
+#define IOCTL_FLUSH_CACHE     _IOR(IOCTL_MAGIC, 0x02, struct cxl_dev_path_struct)
 
 //redefine this here
 struct dax_device {
@@ -50,6 +52,7 @@ static int mmap_helper(struct file *filp, struct vm_area_struct *vma);
 static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 static int get_cxl_device(void);
 static pfn_t begin_pfn, end_pfn;
+static struct vm_area_struct *this_vma;
 
 
 static const struct file_operations fops = {
@@ -72,7 +75,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	dax_pgoff = vmf->pgoff + FAT_OFFSET;
 	pr_info("Page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
-	vma = vmf->vma;
+	vma = this_vma = vmf->vma;
 	unsigned long size = vma->vm_end - vma->vm_start;
 	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
 	pr_info("cxl: fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
@@ -180,6 +183,11 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 			int path_length = strscpy(device_path, rw.path, FILE_PATH_LENGTH);
 			pr_info("%d char copied to file_path. File path: %s\n", path_length, device_path);
 			get_cxl_device();
+			break;
+		case IOCTL_FLUSH_CACHE: //as ioctl to try try
+			flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
+			flush_tlb_range(this_vma, this_vma->vm_start, this_vma->vm_end);
+			pr_info("Flush CPU cache\n");
 			break;
 		default:
 			return -ENOTTY;
