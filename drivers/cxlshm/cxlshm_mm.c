@@ -26,18 +26,7 @@
 
 #define IOCTL_MAGIC             0xCC
 #define IOCTL_SET_FILE_PATH     _IOW(IOCTL_MAGIC, 0x01, struct cxl_dev_path_struct)
-#define IOCTL_FLUSH_CACHE     _IOR(IOCTL_MAGIC, 0x02, struct cxl_dev_path_struct)
-
-//redefine this here
-struct dax_device {
-	struct inode inode;
-	struct cdev cdev;
-	void *private;
-	unsigned long flags;
-	const struct dax_operations *ops;
-	void *holder_data;
-	const struct dax_holder_operations *holder_ops;
-};
+#define IOCTL_FLUSH_CACHE     	_IOR(IOCTL_MAGIC, 0x02, struct cxl_dev_path_struct)
 
 struct cxl_dev_path_struct {
 	char path[FILE_PATH_LENGTH];
@@ -91,7 +80,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	task = rcu_dereference(vma->vm_mm->owner);
 	owned = is_owner(task->pid);
 	pr_info("Is owner? %d\n", owned);
-	
+
 	if (!owned) {
 		pr_info("Not owned. Try to send message\n");
 		send_one_message(o.ip_4_addr, 57580, "SBGN");
