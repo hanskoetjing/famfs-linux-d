@@ -43,6 +43,12 @@ struct cxl_dev_path_struct {
 	char path[FILE_PATH_LENGTH];
 };
 
+struct ownership {
+	pid_t owner_pid;
+	pfn_t start;
+	pfn_t end;
+};
+
 static char device_path[FILE_PATH_LENGTH];
 static dev_t dev_num, dax_dev_num;
 static struct cdev ffs_cdev;
@@ -54,6 +60,9 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 static int get_cxl_device(void);
 static pfn_t begin_pfn, end_pfn;
 static struct vm_area_struct *this_vma;
+static void *alloc_table_start;
+static pid_t pid;
+static struct ownership o;
 
 
 static const struct file_operations fops = {
@@ -89,9 +98,11 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		pr_info("return val: %ld\n", nr_pages_avail);
 		if (nr_pages_avail < 0) return -ENXIO;
 		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
+		o.start = pf;
+		o.end.val = pf.val + nr_of_pages - 1;
 		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-		pr_info("Mapping 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n",vmf->address , pf.val,
-				pf.val + nr_of_pages - 1, vmf->pgoff);
+		pr_info("Mapping 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n",vmf->address , o.start.val,
+				o.end.val, vmf->pgoff);
 		pr_info("Try to send message\n");
 		send_one_message("127.0.0.1", 57580, "SBGN");
 	} else {
@@ -156,7 +167,7 @@ static int get_cxl_device(void) {
 			dax_write_cache(cxl_dax_device, false);
 			long nr_of_fat_pages = FAT_OFFSET;
 			void *kaddr;
-			int alloc_fat_ret = dax_direct_access(cxl_dax_device, 0, nr_of_fat_pages, DAX_ACCESS, &kaddr, &begin_pfn);
+			int alloc_fat_ret = dax_direct_access(cxl_dax_device, 0, nr_of_fat_pages, DAX_ACCESS, &alloc_table_start, &begin_pfn);
 			end_pfn = begin_pfn;
 			end_pfn.val = end_pfn.val + nr_of_fat_pages - 1;
 			pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
@@ -185,10 +196,12 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 			pr_info("%d char copied to file_path. File path: %s\n", path_length, device_path);
 			get_cxl_device();
 			break;
-		case IOCTL_FLUSH_CACHE: //as ioctl to try try
+		case IOCTL_FLUSH_CACHE: //as ioctl (temporary manual invoke)
+			//volatile struct vm_area_struct
 			flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
-			flush_tlb_range(this_vma, this_vma->vm_start, this_vma->vm_end);
-			pr_info("Flush CPU cache\n");
+			//flush_tlb_range(this_vma, this_vma->vm_start, this_vma->vm_end);
+			zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
+			pr_info("Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
 			break;
 		default:
 			return -ENOTTY;
