@@ -84,38 +84,38 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	struct task_struct *task;
 	volatile struct ownership *on_mem = (volatile struct ownership *) alloc_table_start;
 	
-	dax_pgoff = vmf->pgoff + FAT_OFFSET;
 	pr_info("Page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
+	owned = is_owner(task->pid);
+	pr_info("Is owner? %d\n", ow);
+	if (!owned) {
+		pr_info("Not owned. Try to send message\n");
+		send_one_message(o.ip_4_addr, 57580, "SBGN");
+		o.owner_pid = task->pid;
+		strscpy(o.ip_4_addr, "127.0.0.1", sizeof(o.ip_4_addr));
+	}
+	dax_pgoff = vmf->pgoff + FAT_OFFSET;
 	vma = this_vma = vmf->vma;
 	task = rcu_dereference(vma->vm_mm->owner);
 	unsigned long size = vma->vm_end - vma->vm_start;
 	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
 	pr_info("cxl: fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
+
 	if (!dax_alive(cxl_dax_device))
 		run_dax(cxl_dax_device);
+	
 	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
-	int ow = is_owner(task->pid);
-	pr_info("Is owner? %d\n", ow);
-	if (owned) {
-		pr_info("return val: %ld\n", nr_pages_avail);
-		if (nr_pages_avail < 0) return -ENXIO;
-		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
-		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-		o.start = pf;
-		o.end.val = pf.val + nr_of_pages - 1;
-		o.owner_pid = task->pid;
-		strscpy(o.ip_4_addr, "127.0.0.1", sizeof(o.ip_4_addr));
-		*on_mem = o;
-		pr_info("Mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
-				o.end.val, vmf->pgoff);
-		pr_info("Try to send message\n");
-		send_one_message(o.ip_4_addr, 57580, "SBGN");
-	} else {
-		pr_info("Other node is using the same address 0x%llx\n", pf.val);
-		ret = -EAGAIN;
-	}
-	pr_info("Owned by pid: %d on host: %s\n", on_mem->owner_pid, on_mem->ip_4_addr);
+	if (nr_pages_avail < 0) return -ENXIO;
+	//pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
+	o.start = pf;
+	o.end.val = pf.val + nr_of_pages - 1;
+	ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
+	if (ret < 0) return ret; 
+	*on_mem = o;
+	pr_info("Mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
+			o.end.val, vmf->pgoff);
+	
+	pr_info("Now owned by pid: %d on host: %s\n", on_mem->owner_pid, on_mem->ip_4_addr);
 	return ret;
 }
 
@@ -171,9 +171,12 @@ static int is_owner(pid_t pid) {
 	ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
 	if (ret < 0) return ret;
 	volatile struct ownership *owner_on_mem = (volatile struct ownership *)alloc_table_start;
-	if (owner_on_mem) {
+	if (owner_on_mem && owner_on_mem->owner_pid > 0) {
 		pr_info("Owner on mem: %d on host: %s\n", owner_on_mem->owner_pid, owner_on_mem->ip_4_addr);
 		if (owner_on_mem->owner_pid == pid) ret = 1;
+		else ret = 0;
+	} else {
+		ret = 0;
 	}
 	return ret;
 }
