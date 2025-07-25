@@ -40,7 +40,8 @@ SYSCALL_DEFINE0(tcp_client_stop) {
 
 int tcp_client_start(char *ip_4_addr, int port) {
 	int ret = 0;
-	if (client_socket->state == SS_FREE) {
+
+	if (!client_socket) {
 		ret = sock_create_kern(&init_net, AF_INET, SOCK_STREAM, IPPROTO_TCP, &client_socket);
 		if (ret < 0) return ret;
 		memset(&client_sockaddr, 0, sizeof(client_sockaddr));
@@ -91,6 +92,7 @@ EXPORT_SYMBOL(tcp_client_stop);
 
 int send_one_message(char *ip_4_addr, int port, char *message) {
 	int ret = 0;
+	if (client_socket) tcp_client_stop(); //if there is a socket from previous, stop it
 	ret = tcp_client_start(ip_4_addr, port);
 	if (ret >= 0) {
 		ret = send_message(message);
