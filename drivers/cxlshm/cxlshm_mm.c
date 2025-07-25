@@ -14,7 +14,6 @@
 #include <linux/ioport.h>
 #include "dax-private.h"
 #include <linux/cxlshm_msg.h>
-#include <inttypes.h>
 
 
 #define DEVICE_NAME             "cxl_mmap"
@@ -71,7 +70,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
     
 	
 	dax_pgoff = vmf->pgoff + FAT_OFFSET;
-	pr_info("Page fault at user address 0x" PRIx64 " (pgoff from userspace 0x%" PRIx32 ")\n",
+	pr_info("Page fault at user address 0x%llx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
 	vma = vmf->vma;
 	unsigned long size = vma->vm_end - vma->vm_start;
@@ -156,7 +155,7 @@ static int get_cxl_device(void) {
 			int alloc_fat_ret = dax_direct_access(cxl_dax_device, 0, nr_of_fat_pages, DAX_ACCESS, &kaddr, &begin_pfn);
 			end_pfn = begin_pfn;
 			end_pfn.val = end_pfn.val + nr_of_fat_pages;
-			pr_info("Initialise allocation table at 0x%" PRIx64 "\n", begin_pfn.val);
+			pr_info("Initialise allocation table at 0x%llx\n", begin_pfn.val);
 		} else {
 			pr_info("no cxl_dax_device\n");
 		}
