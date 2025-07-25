@@ -197,7 +197,7 @@ int get_cxl_device(void) {
 			end_pfn = begin_pfn;
 			end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
 			pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
-			is_owner(0);
+			pr_info("Owner on mem: %d\n", get_owner_on_mem());
 		} else {
 			pr_info("no cxl_dax_device\n");
 		}
