@@ -251,7 +251,8 @@ struct ownership *get_owner_on_mem(void) {
 	if (!cxl_dax_device) return -ENXIO;
 	if (!dax_alive(cxl_dax_device))
 		run_dax(cxl_dax_device);
-	ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
+	pfn_t pfn;
+	ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &pfn);
 	if (ret < 0) return NULL;
 	volatile struct ownership *owner_on_mem = (volatile struct ownership *)alloc_table_start;
 	return owner_on_mem;
