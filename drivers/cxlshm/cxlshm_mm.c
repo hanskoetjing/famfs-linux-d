@@ -78,7 +78,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	int owned = 1;
 	vm_fault_t ret = 0;
 	pgoff_t dax_pgoff; 
-	struct task_struct task;    
+	struct task_struct *task;    
 	
 	dax_pgoff = vmf->pgoff + FAT_OFFSET;
 	pr_info("Page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
