@@ -30,6 +30,8 @@
 #include <linux/dax.h>
 #include <linux/ioport.h>
 #include "dax-private.h"
+#include <asm-generic/cacheflush.h>
+#include <linux/rcupdate.h>
 
 
 #define DEVICE_NAME             "ffs_sync"
@@ -197,6 +199,7 @@ struct task_struct *get_task_from_int_pid(pid_t pid) {
 
 int flush_mem_task(pid_t pid) {
 	int ret = 0;
+	struct vm_area_struct *this_vma;
 	pr_info("pid: %d\n", pid);
 	if (pid != -1) {
 		the_task = get_task_from_int_pid(pid);
@@ -211,8 +214,16 @@ int flush_mem_task(pid_t pid) {
 		int i = 0;
 		mas_for_each(&mas, vma, ULONG_MAX) {
 			pr_info("vma %d addr: 0x%lx\n", i, vma->vm_start);
+			if (vma->vm_start == o->vm_start) {
+				this_vma = vma; 
+				break;
+			}
 			i++;
 		}
+
+		flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
+		zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
+		pr_info("Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
 	} else {
 		ret = -1;
 	}
@@ -248,7 +259,7 @@ out_path_put:
 
 struct ownership *get_owner_on_mem(void) {
 	int ret = 0;
-	if (!cxl_dax_device) return -ENXIO;
+	if (!cxl_dax_device) return NULL;
 	if (!dax_alive(cxl_dax_device))
 		run_dax(cxl_dax_device);
 	pfn_t pfn;
