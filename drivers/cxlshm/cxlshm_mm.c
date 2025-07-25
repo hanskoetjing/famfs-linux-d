@@ -201,7 +201,6 @@ static int __init cxl_range_helper_init(void) {
 	pr_info("using default path: %s\n", device_path);
 	pr_info("cxlshm_mm: loaded\n");
 	get_cxl_device();
-	dax_pgoff = 0;
 	return 0;
 }
 
