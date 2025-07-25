@@ -54,7 +54,7 @@ static int mmap_helper(struct file *filp, struct vm_area_struct *vma);
 static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 int get_cxl_device(void);
 int is_owner(pid_t pid);
-pid_t get_owner_on_mem(void)
+pid_t get_owner_on_mem(void);
 
 
 static const struct file_operations fops = {
