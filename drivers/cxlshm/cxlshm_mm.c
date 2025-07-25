@@ -102,7 +102,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		o.end.val = pf.val + nr_of_pages - 1;
 		o.owner_pid = task->pid;
 		strscpy(o.ip_4_addr, "127.0.0.1", sizeof(o.ip_4_addr));
-		on_mem = &o;
+		*on_mem = o;
 		pr_info("Mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
 				o.end.val, vmf->pgoff);
 		pr_info("Try to send message\n");
@@ -111,7 +111,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		pr_info("Other node is using the same address 0x%llx\n", pf.val);
 		ret = -EAGAIN;
 	}
-	//pr_info("PID: %d\n", on_mem->owner_pid);
+	pr_info("Owned by pid: %d on host: %s\n", on_mem->owner_pid, on_mem->ip_4_addr);
 	return ret;
 }
 
