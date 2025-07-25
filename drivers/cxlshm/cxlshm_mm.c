@@ -15,6 +15,7 @@
 #include "dax-private.h"
 #include <linux/cxlshm_msg.h>
 #include <asm-generic/cacheflush.h>
+#include <linux/rcupdate.h>
 
 
 #define DEVICE_NAME             "cxl_mmap"
@@ -77,7 +78,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	int owned = 1;
 	vm_fault_t ret = 0;
 	pgoff_t dax_pgoff; 
-    
+	struct task_struct task;    
 	
 	dax_pgoff = vmf->pgoff + FAT_OFFSET;
 	pr_info("Page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
@@ -86,10 +87,6 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	unsigned long size = vma->vm_end - vma->vm_start;
 	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
 	pr_info("cxl: fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
-	if (!dax_alive(cxl_dax_device))
-		run_dax(cxl_dax_device);
-	pr_info("getting pfn from dax mem %d\n", dax_alive(cxl_dax_device));
-	if (cxl_dax_device->ops == NULL) pr_info("NULL!\n");
 	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
 	if (owned) {
 		pr_info("return val: %ld\n", nr_pages_avail);
@@ -97,8 +94,9 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
 		o.start = pf;
 		o.end.val = pf.val + nr_of_pages - 1;
+		task = rcu_dereference(vma->vm_mm->owner);
 		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-		pr_info("Mapping 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n",vmf->address , o.start.val,
+		pr_info("Mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
 				o.end.val, vmf->pgoff);
 		pr_info("Try to send message\n");
 		send_one_message("127.0.0.1", 57580, "SBGN");
