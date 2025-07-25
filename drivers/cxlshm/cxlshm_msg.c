@@ -7,10 +7,12 @@
 #include <linux/uaccess.h>
 #include <linux/io.h>
 #include <linux/mm.h>
+#include <linux/mm_types.h>
+#include <linux/maple_tree.h>
 #include <linux/string.h>
 #include <linux/socket.h>
 #include <linux/kthread.h>
-#include <linux/delay.h> // untuk msleep()
+#include <linux/delay.h>
 #include <linux/in.h>
 #include <net/sock.h>
 #include <linux/inet.h>
@@ -22,6 +24,8 @@
 #include <linux/sched.h>
 #include <linux/pid.h>
 #include <linux/pid_types.h>
+#include <vdso/limits.h>
+
 
 #define DEVICE_NAME             "ffs_sync"
 #define CLASS_NAME              "ffs_class"
@@ -57,12 +61,16 @@ static int port = 57580;
 static wait_queue_head_t wq;
 static int ready = 0;
 char message[MAX_BUFFER_NET] = {0};
-int accept_connection(void *socket_in);
-int check_commands(char *message);
 static void *alloc_table_start;
 static pid_t t = -1;
 struct task_struct *the_task;
 struct pid *the_pid;
+
+
+int accept_connection(void *socket_in);
+int check_commands(char *message);
+struct task_struct *get_task_from_int_pid(pid_t pid);
+int flush_mem_task(pid_t pid);
 
 int check_commands(char *message) {
 	int result = -1;
@@ -131,11 +139,7 @@ int accept_connection(void *socket_in) {
 					pr_info("Data: %s\n", buf);
 					int tmp = 0;
 					int res = kstrtoint(buf, 10, &tmp);
-
-					t = tmp;
-					the_pid = find_get_pid(t);
-					the_task = get_pid_task(the_pid, PIDTYPE_PID);
-					pr_info("task: %d\n", the_task->pid);
+					flush_mem_task((pid_t) tmp);
 				} else if (len == 0) {
 					pr_info("Client closed connection.\n");
 					break;
@@ -164,6 +168,26 @@ static void tcp_server_stop(void) {
 		sock_release(server_socket);
 		server_socket = NULL;
 	}
+}
+
+struct task_struct *get_task_from_int_pid(pid_t pid) {
+	the_pid = find_get_pid(pid);
+	return get_pid_task(the_pid, PIDTYPE_PID);
+}
+
+int flush_mem_task(pid_t pid) {
+	int ret = 0;
+	the_task = get_task_from_int_pid((pid_t)tmp);
+	pr_info("task: %d\n", the_task->pid);
+	struct mm_struct *mm = the_task->mm;
+	struct vm_area_struct *vma;
+	MA_STATE(mas, &mm->mm_mt, 0, 0);
+	int i = 0;
+	mas_for_each(&mas, vma, ULONG_MAX) {
+		pr_info("vma %d addr: 0x%lx\n", i, vma->vm_start);
+		i++;
+	}
+	return ret;
 }
 
 static long ffs_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg) {
