@@ -78,7 +78,8 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	int owned = 1;
 	vm_fault_t ret = 0;
 	pgoff_t dax_pgoff; 
-	struct task_struct *task;    
+	struct task_struct *task;
+	volatile struct ownership *on_mem = (volatile struct ownership *) alloc_table_start;
 	
 	dax_pgoff = vmf->pgoff + FAT_OFFSET;
 	pr_info("Page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
@@ -96,7 +97,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		o.end.val = pf.val + nr_of_pages - 1;
 		task = rcu_dereference(vma->vm_mm->owner);
 		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-		volatile struct ownership *on_mem = (volatile struct ownership *) alloc_table_start;
+		
 		on_mem = &o;
 		pr_info("Mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
 				o.end.val, vmf->pgoff);
