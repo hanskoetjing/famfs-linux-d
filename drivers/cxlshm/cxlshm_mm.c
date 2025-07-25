@@ -87,7 +87,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	pr_info("Page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
 	owned = is_owner(task->pid);
-	pr_info("Is owner? %d\n", ow);
+	pr_info("Is owner? %d\n", owned);
 	if (!owned) {
 		pr_info("Not owned. Try to send message\n");
 		send_one_message(o.ip_4_addr, 57580, "SBGN");
