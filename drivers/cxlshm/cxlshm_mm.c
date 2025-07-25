@@ -15,7 +15,6 @@
 #include "dax-private.h"
 #include <linux/cxlshm_msg.h>
 #include <asm-generic/cacheflush.h>
-#include <asm-generic/tlbflush.h>
 
 
 #define DEVICE_NAME             "cxl_mmap"
@@ -61,9 +60,7 @@ static int get_cxl_device(void);
 static pfn_t begin_pfn, end_pfn;
 static struct vm_area_struct *this_vma;
 static void *alloc_table_start;
-static pid_t pid;
 static struct ownership o;
-
 
 static const struct file_operations fops = {
 	.owner = THIS_MODULE,
@@ -166,8 +163,8 @@ static int get_cxl_device(void) {
 			pr_info("got dax_device\n");
 			dax_write_cache(cxl_dax_device, false);
 			long nr_of_fat_pages = FAT_OFFSET;
-			void *kaddr;
-			int alloc_fat_ret = dax_direct_access(cxl_dax_device, 0, nr_of_fat_pages, DAX_ACCESS, &alloc_table_start, &begin_pfn);
+			
+			dax_direct_access(cxl_dax_device, 0, nr_of_fat_pages, DAX_ACCESS, &alloc_table_start, &begin_pfn);
 			end_pfn = begin_pfn;
 			end_pfn.val = end_pfn.val + nr_of_fat_pages - 1;
 			pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
