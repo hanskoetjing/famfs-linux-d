@@ -86,8 +86,8 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		if (nr_pages_avail < 0) return -ENXIO;
 		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
 		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-		pr_info("Mapping 0x%llx from mem 0x%lx to 0x%lx (pgoff from user 0x%lx)\n", pf.val,
-				vmf->address, pf.val + nr_of_pages - 1, vmf->pgoff);
+		pr_info("Mapping 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n",vmf->address , pf.val,
+				pf.val + nr_of_pages - 1, vmf->pgoff);
 		pr_info("Try to send message\n");
 		send_one_message("127.0.0.1", 57580, "SBGN");
 	} else {
