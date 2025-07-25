@@ -55,14 +55,16 @@ static dev_t dev_num, dax_dev_num;
 static struct cdev ffs_cdev;
 static struct class *ffs_class;
 static struct dax_device *cxl_dax_device;
-
-static int mmap_helper(struct file *filp, struct vm_area_struct *vma);
-static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
-static int get_cxl_device(void);
 static pfn_t begin_pfn, end_pfn;
 static struct vm_area_struct *this_vma;
 static void *alloc_table_start;
 static struct ownership o;
+
+static int mmap_helper(struct file *filp, struct vm_area_struct *vma);
+static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
+static int get_cxl_device(void);
+static int is_owner(pid_t pid);
+
 
 static const struct file_operations fops = {
 	.owner = THIS_MODULE,
@@ -93,6 +95,8 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	if (!dax_alive(cxl_dax_device))
 		run_dax(cxl_dax_device);
 	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
+	int ow = is_owner(task->pid);
+	pr_info("Is owner? %d\n", ow);
 	if (owned) {
 		pr_info("return val: %ld\n", nr_pages_avail);
 		if (nr_pages_avail < 0) return -ENXIO;
@@ -159,6 +163,21 @@ out_path_put:
 	return err;
 }
 
+static int is_owner(pid_t pid) {
+	int ret = 0;
+	if (!cxl_dax_device) return -ENXIO;
+	if (!dax_alive(cxl_dax_device))
+		run_dax(cxl_dax_device);
+	int ret = dax_direct_access(cxl_dax_device, 0, nr_of_fat_pages, DAX_ACCESS, &alloc_table_start, &begin_pfn);
+	if (ret < 0) return ret;
+	volatile struct ownership *owner_on_mem = (volatile struct ownership *)alloc_table_start;
+	if (owner_on_mem) {
+		pr_info("Owner on mem: %d on host: %s\n", owner_on_mem->owner_pid, owner_on_mem->ip_4_addr);
+		if (owner_on_mem->owner_pid == pid) ret = 1;
+	}
+	return ret;
+}
+
 static int get_cxl_device(void) {
 	int l = lookup_daxdev(device_path, &dax_dev_num);
 	if (!l) {
@@ -175,9 +194,7 @@ static int get_cxl_device(void) {
 			end_pfn = begin_pfn;
 			end_pfn.val = end_pfn.val + nr_of_fat_pages - 1;
 			pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
-			volatile struct ownership *owner_on_mem = (volatile struct ownership *)alloc_table_start;
-			if (owner_on_mem)
-				pr_info("Owner on mem: %d on host: %s\n", owner_on_mem->owner_pid, owner_on_mem->ip_4_addr);
+			is_owner(0);
 		} else {
 			pr_info("no cxl_dax_device\n");
 		}
