@@ -173,6 +173,9 @@ static int get_cxl_device(void) {
 			end_pfn = begin_pfn;
 			end_pfn.val = end_pfn.val + nr_of_fat_pages - 1;
 			pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
+			volatile struct ownership *owner_on_mem = (volatile struct ownership *)alloc_table_start;
+			if (owner_on_mem)
+				pr_info("Owner on mem: %d on host: %s\n", owner_on_mem->owner_pid, owner_on_mem->ip_4_addr);
 		} else {
 			pr_info("no cxl_dax_device\n");
 		}
