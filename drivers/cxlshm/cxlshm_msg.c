@@ -21,6 +21,7 @@
 #include <linux/kstrtox.h>
 #include <linux/sched.h>
 #include <linux/pid.h>
+#include <linux/pid_types.h>
 
 #define DEVICE_NAME             "ffs_sync"
 #define CLASS_NAME              "ffs_class"
@@ -61,6 +62,7 @@ int check_commands(char *message);
 static void *alloc_table_start;
 static pid_t t = -1;
 struct task_struct *the_task;
+struct pid *the_pid;
 
 int check_commands(char *message) {
 	int result = -1;
@@ -129,8 +131,10 @@ int accept_connection(void *socket_in) {
 					pr_info("Data: %s\n", buf);
 					int tmp = 0;
 					int res = kstrtoint(buf, 10, &tmp);
+
 					t = tmp;
-					the_task = find_task_by_vpid(t);
+					the_pid = find_get_pid(t);
+					the_task = get_pid_task(the_pid, PIDTYPE_PID);
 					pr_info("task: %d\n", the_task->pid);
 				} else if (len == 0) {
 					pr_info("Client closed connection.\n");
