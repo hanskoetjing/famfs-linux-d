@@ -45,6 +45,7 @@ struct cxl_dev_path_struct {
 
 struct ownership {
 	pid_t owner_pid;
+	char ip_4_addr[17];
 	pfn_t start;
 	pfn_t end;
 };
@@ -85,29 +86,33 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	pr_info("Page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
 	vma = this_vma = vmf->vma;
+	task = rcu_dereference(vma->vm_mm->owner);
 	unsigned long size = vma->vm_end - vma->vm_start;
 	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
 	pr_info("cxl: fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
+	if (!dax_alive(cxl_dax_device))
+		run_dax(cxl_dax_device);
 	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
+	o.ip_4_addr = {0};
 	if (owned) {
 		pr_info("return val: %ld\n", nr_pages_avail);
 		if (nr_pages_avail < 0) return -ENXIO;
 		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
+		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
 		o.start = pf;
 		o.end.val = pf.val + nr_of_pages - 1;
-		task = rcu_dereference(vma->vm_mm->owner);
-		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-		
+		o.owner_pid = task->pid;
+		strscpy(o.ip_4_addr, "127.0.0.1", sizeof(o.ip_4_addr));
 		on_mem = &o;
 		pr_info("Mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
 				o.end.val, vmf->pgoff);
 		pr_info("Try to send message\n");
-		send_one_message("127.0.0.1", 57580, "SBGN");
+		send_one_message(, 57580, "SBGN");
 	} else {
 		pr_info("Other node is using the same address 0x%llx\n", pf.val);
 		ret = -EAGAIN;
 	}
-	pr_info("PID: %d\n", on_mem->owner_pid);
+	//pr_info("PID: %d\n", on_mem->owner_pid);
 	return ret;
 }
 
