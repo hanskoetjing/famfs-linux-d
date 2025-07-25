@@ -38,6 +38,8 @@ struct ownership { //TODO: add version to the struct...
 	char ip_4_addr[17];
 	pfn_t start;
 	pfn_t end;
+	unsigned long vm_start;
+	unsigned long vm_end;
 };
 
 static char device_path[FILE_PATH_LENGTH];
@@ -91,6 +93,9 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		o.owner_pid = task->pid;
 		strscpy(o.ip_4_addr, "127.0.0.1", sizeof(o.ip_4_addr));
 	}
+
+	o.vm_start = vma->vm_start;
+	o.vm_end = vma->vm_end;
 	
 	unsigned long size = vma->vm_end - vma->vm_start;
 	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
@@ -132,7 +137,7 @@ static int mmap_helper(struct file *filp, struct vm_area_struct *vma) {
 }
 
 //taken from famfs kernel code
-static int lookup_daxdev(const char *pathname, dev_t *devno) {
+int lookup_daxdev(const char *pathname, dev_t *devno) {
 	struct inode *inode;
 	struct path path;
 	int err;

@@ -25,6 +25,11 @@
 #include <linux/pid.h>
 #include <linux/pid_types.h>
 #include <vdso/limits.h>
+#include <linux/namei.h>
+#include <linux/path.h>
+#include <linux/dax.h>
+#include <linux/ioport.h>
+#include "dax-private.h"
 
 
 #define DEVICE_NAME             "ffs_sync"
@@ -35,6 +40,8 @@
 #define MAX_BUFFER_NET          128
 #define DEFAULT_PORT            57580
 #define COMMAND_LENGTH          4
+#define FAT_SIZE				2097152
+#define FAT_OFFSET				FAT_SIZE / PAGE_SIZE
 
 #define IOCTL_MAGIC             0xCD
 #define IOCTL_SET_FILE_PATH     _IOW(IOCTL_MAGIC, 0x01, struct famfs_sync_control_struct)
@@ -47,11 +54,20 @@ struct famfs_sync_control_struct {
 	int port;
 };
 
+struct ownership { //TODO: add version to the struct...
+	pid_t owner_pid;
+	char ip_4_addr[17];
+	pfn_t start;
+	pfn_t end;
+	unsigned long vm_start;
+	unsigned long vm_end;
+};
+
 static DEFINE_SPINLOCK(ctr_lock);
 static char *commands[] = {"SBGN", "REND", "SACK", "SNCK", NULL};
 static char ffs_file_path[FILE_PATH_LENGTH + 1];
 static int path_length;
-static dev_t dev_num;
+static dev_t dev_num, dax_dev_num;
 static struct cdev ffs_cdev;
 static struct class *ffs_class;
 static struct socket *server_socket;
@@ -65,7 +81,9 @@ static void *alloc_table_start;
 static pid_t t = -1;
 struct task_struct *the_task;
 struct pid *the_pid;
-
+static struct dax_device *cxl_dax_device;
+static char device_path[FILE_PATH_LENGTH];
+struct ownership *owner_from_net;
 
 int accept_connection(void *socket_in);
 int check_commands(char *message);
@@ -183,6 +201,10 @@ int flush_mem_task(pid_t pid) {
 	struct mm_struct *mm = the_task->mm;
 	struct vm_area_struct *vma;
 	MA_STATE(mas, &mm->mm_mt, 0, 0);
+
+	get_cxl_device();
+	struct ownership *o = get_owner_on_mem();
+	pr_info("vm_start: 0x%lx\n", o->vm_start);
 	int i = 0;
 	mas_for_each(&mas, vma, ULONG_MAX) {
 		pr_info("vma %d addr: 0x%lx\n", i, vma->vm_start);
@@ -190,6 +212,67 @@ int flush_mem_task(pid_t pid) {
 	}
 	return ret;
 }
+
+//taken from famfs kernel code
+int lookup_daxdev(const char *pathname, dev_t *devno) {
+	struct inode *inode;
+	struct path path;
+	int err;
+
+	if (!pathname || !*pathname)
+		return -EINVAL;
+
+	err = kern_path(pathname, LOOKUP_FOLLOW, &path);
+	if (err)
+		return err;
+
+	inode = d_backing_inode(path.dentry);
+	if (!S_ISCHR(inode->i_mode)) {
+		err = -EINVAL;
+		goto out_path_put;
+	}
+	//may_open_dev is taken out
+	 /* if it's dax, i_rdev is struct dax_device */
+	*devno = inode->i_rdev;
+
+out_path_put:
+	path_put(&path);
+	return err;
+}
+
+struct ownership *get_owner_on_mem(void) {
+	int ret = 0;
+	if (!cxl_dax_device) return -ENXIO;
+	if (!dax_alive(cxl_dax_device))
+		run_dax(cxl_dax_device);
+	ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
+	if (ret < 0) return ret;
+	volatile struct ownership *owner_on_mem = (volatile struct ownership *)alloc_table_start;
+	return owner_on_mem;
+
+}
+
+int get_cxl_device(void) {
+	int l = lookup_daxdev(device_path, &dax_dev_num);
+	if (!l) {
+		pr_info("dax dev num: %d\n", dax_dev_num);
+		cxl_dax_device = dax_dev_get(dax_dev_num);
+		if (cxl_dax_device) {
+			pr_info("got dax_device\n");
+			dax_write_cache(cxl_dax_device, false);
+			if (!dax_alive(cxl_dax_device))
+				run_dax(cxl_dax_device);
+		} else {
+			pr_info("no cxl_dax_device\n");
+		}
+		
+	} else {
+		pr_info("no dax dev num:\n");
+	}
+	
+	return 0;
+}
+
 
 static long ffs_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg) {
 	struct famfs_sync_control_struct rw;
