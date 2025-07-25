@@ -168,7 +168,7 @@ static int is_owner(pid_t pid) {
 	if (!cxl_dax_device) return -ENXIO;
 	if (!dax_alive(cxl_dax_device))
 		run_dax(cxl_dax_device);
-	int ret = dax_direct_access(cxl_dax_device, 0, nr_of_fat_pages, DAX_ACCESS, &alloc_table_start, &begin_pfn);
+	ret = dax_direct_access(cxl_dax_device, 0, nr_of_fat_pages, DAX_ACCESS, &alloc_table_start, &begin_pfn);
 	if (ret < 0) return ret;
 	volatile struct ownership *owner_on_mem = (volatile struct ownership *)alloc_table_start;
 	if (owner_on_mem) {
