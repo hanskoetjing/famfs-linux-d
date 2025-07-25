@@ -14,11 +14,14 @@
 #include <linux/ioport.h>
 #include "dax-private.h"
 #include <linux/cxlshm_msg.h>
+#include <inttypes.h>
 
 
 #define DEVICE_NAME             "cxl_mmap"
 #define CLASS_NAME              "cxl_mmap_class"
 #define FILE_PATH_LENGTH        32
+#define FAT_SIZE				2097152
+#define FAT_OFFSET				FAT_SIZE / PAGE_SIZE
 
 #define IOCTL_MAGIC             0xCC
 #define IOCTL_SET_FILE_PATH     _IOW(IOCTL_MAGIC, 0x01, struct cxl_dev_path_struct)
@@ -47,7 +50,7 @@ static struct dax_device *cxl_dax_device;
 static int mmap_helper(struct file *filp, struct vm_area_struct *vma);
 static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 static int get_cxl_device(void);
-static pgoff_t dax_pgoff; 
+static pfn_t begin_pfn, end_pfn;
 
 
 static const struct file_operations fops = {
@@ -64,16 +67,16 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	struct vm_area_struct *vma;
 	int owned = 1;
 	vm_fault_t ret = 0;
+	pgoff_t dax_pgoff; 
     
 	
-	pr_info("Page fault at user address 0x%lx (pgoff 0x%lx)\n",
+	dax_pgoff = vmf->pgoff + FAT_OFFSET;
+	pr_info("Page fault at user address 0x" PRIx64 " (pgoff from userspace 0x%" PRIx32 ")\n",
 		vmf->address, vmf->pgoff);
 	vma = vmf->vma;
 	unsigned long size = vma->vm_end - vma->vm_start;
-	
 	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
 	pr_info("cxl: fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
-	dax_pgoff = vmf->pgoff;
 	if (!dax_alive(cxl_dax_device))
 		run_dax(cxl_dax_device);
 	pr_info("getting pfn from dax mem %d\n", dax_alive(cxl_dax_device));
@@ -84,7 +87,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		if (nr_pages_avail < 0) return -ENXIO;
 		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
 		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-		pr_info("Mapping 0x%llx from mem to 0x%lx (pgoff 0x%lx)\n", pf.val,
+		pr_info("Mapping 0x%llx from mem to 0x%lx (pgoff from user 0x%lx)\n", pf.val,
 				vmf->address, vmf->pgoff);
 		pr_info("Try to send message\n");
 		send_one_message("127.0.0.1", 57580, "SBGN");
@@ -148,6 +151,12 @@ static int get_cxl_device(void) {
 		if (cxl_dax_device) {
 			pr_info("got dax_device\n");
 			dax_write_cache(cxl_dax_device, false);
+			long nr_of_fat_pages = FAT_OFFSET;
+			void *kaddr;
+			int alloc_fat_ret = dax_direct_access(cxl_dax_device, 0, nr_of_fat_pages, DAX_ACCESS, &kaddr, &begin_pfn);
+			end_pfn = begin_pfn;
+			end_pfn.val = end_pfn.val + nr_of_fat_pages;
+			pr_info("Initialise allocation table at 0x%" PRIx64 "\n", begin_pfn.val);
 		} else {
 			pr_info("no cxl_dax_device\n");
 		}
