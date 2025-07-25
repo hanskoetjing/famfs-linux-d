@@ -86,8 +86,8 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		if (nr_pages_avail < 0) return -ENXIO;
 		pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
 		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-		pr_info("Mapping 0x%llx from mem to 0x%lx (pgoff from user 0x%lx)\n", pf.val,
-				vmf->address, vmf->pgoff);
+		pr_info("Mapping 0x%llx from mem 0x%lx to 0x%lx (pgoff from user 0x%lx)\n", pf.val,
+				vmf->address, pf.val + nr_of_pages - 1, vmf->pgoff);
 		pr_info("Try to send message\n");
 		send_one_message("127.0.0.1", 57580, "SBGN");
 	} else {
@@ -154,7 +154,7 @@ static int get_cxl_device(void) {
 			void *kaddr;
 			int alloc_fat_ret = dax_direct_access(cxl_dax_device, 0, nr_of_fat_pages, DAX_ACCESS, &kaddr, &begin_pfn);
 			end_pfn = begin_pfn;
-			end_pfn.val = end_pfn.val + nr_of_fat_pages;
+			end_pfn.val = end_pfn.val + nr_of_fat_pages - 1;
 			pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
 		} else {
 			pr_info("no cxl_dax_device\n");
