@@ -18,6 +18,9 @@
 #include <linux/poll.h>
 #include <linux/wait.h>
 #include <linux/spinlock.h>
+#include <linux/kstrtox.h>
+#include <linux/sched.h>
+#include <linux/pid.h>
 
 #define DEVICE_NAME             "ffs_sync"
 #define CLASS_NAME              "ffs_class"
@@ -55,6 +58,9 @@ static int ready = 0;
 char message[MAX_BUFFER_NET] = {0};
 int accept_connection(void *socket_in);
 int check_commands(char *message);
+static void *alloc_table_start;
+static pid_t t = -1;
+struct task *the_task;
 
 int check_commands(char *message) {
 	int result = -1;
@@ -117,12 +123,15 @@ int accept_connection(void *socket_in) {
 					spin_lock(&ctr_lock);
 					memset(message, 0, sizeof(message));
 					strscpy(message, buf, sizeof(buf));
-					pr_info("is a command? %d\n", check_commands(message));
-					if (check_commands(message) != -1)
-						ready = 1;
+					ready = 1;
 					spin_unlock(&ctr_lock);
 					wake_up_interruptible(&wq);
 					pr_info("Data: %s\n", buf);
+					int tmp = 0;
+					int res = kstrtoint(buf, 10, &tmp);
+					t = tmp;
+					the_task = find_task_by_vpid(t);
+					pr_info("task: %d\n", the_task->pid);
 				} else if (len == 0) {
 					pr_info("Client closed connection.\n");
 					break;
