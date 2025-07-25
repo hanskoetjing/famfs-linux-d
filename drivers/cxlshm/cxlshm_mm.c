@@ -93,7 +93,6 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	if (!dax_alive(cxl_dax_device))
 		run_dax(cxl_dax_device);
 	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
-	o.ip_4_addr = {0};
 	if (owned) {
 		pr_info("return val: %ld\n", nr_pages_avail);
 		if (nr_pages_avail < 0) return -ENXIO;
@@ -107,7 +106,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		pr_info("Mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
 				o.end.val, vmf->pgoff);
 		pr_info("Try to send message\n");
-		send_one_message(, 57580, "SBGN");
+		send_one_message(o.ip_4_addr, 57580, "SBGN");
 	} else {
 		pr_info("Other node is using the same address 0x%llx\n", pf.val);
 		ret = -EAGAIN;
