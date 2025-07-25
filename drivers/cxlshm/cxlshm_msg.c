@@ -60,7 +60,7 @@ int accept_connection(void *socket_in);
 int check_commands(char *message);
 static void *alloc_table_start;
 static pid_t t = -1;
-struct task *the_task;
+struct task_struct *the_task;
 
 int check_commands(char *message) {
 	int result = -1;
