@@ -177,7 +177,7 @@ struct task_struct *get_task_from_int_pid(pid_t pid) {
 
 int flush_mem_task(pid_t pid) {
 	int ret = 0;
-	the_task = get_task_from_int_pid((pid_t)tmp);
+	the_task = get_task_from_int_pid(pid);
 	pr_info("task: %d\n", the_task->pid);
 	struct mm_struct *mm = the_task->mm;
 	struct vm_area_struct *vma;
