@@ -78,7 +78,6 @@ static wait_queue_head_t wq;
 static int ready = 0;
 char message[MAX_BUFFER_NET] = {0};
 static void *alloc_table_start;
-static pid_t t = -1;
 struct task_struct *the_task;
 struct pid *the_pid;
 static struct dax_device *cxl_dax_device;
@@ -89,6 +88,8 @@ int accept_connection(void *socket_in);
 int check_commands(char *message);
 struct task_struct *get_task_from_int_pid(pid_t pid);
 int flush_mem_task(pid_t pid);
+int get_cxl_device(void);
+struct ownership *get_owner_on_mem(void);
 
 int check_commands(char *message) {
 	int result = -1;
@@ -157,6 +158,7 @@ int accept_connection(void *socket_in) {
 					pr_info("Data: %s\n", buf);
 					int tmp = 0;
 					int res = kstrtoint(buf, 10, &tmp);
+					if (res < 0) tmp = -1;
 					flush_mem_task((pid_t) tmp);
 				} else if (len == 0) {
 					pr_info("Client closed connection.\n");
@@ -196,19 +198,23 @@ struct task_struct *get_task_from_int_pid(pid_t pid) {
 int flush_mem_task(pid_t pid) {
 	int ret = 0;
 	pr_info("pid: %d\n", pid);
-	the_task = get_task_from_int_pid(pid);
-	pr_info("task: %d\n", the_task->pid);
-	struct mm_struct *mm = the_task->mm;
-	struct vm_area_struct *vma;
-	MA_STATE(mas, &mm->mm_mt, 0, 0);
+	if (pid != -1) {
+		the_task = get_task_from_int_pid(pid);
+		pr_info("task: %d\n", the_task->pid);
+		struct mm_struct *mm = the_task->mm;
+		struct vm_area_struct *vma;
+		MA_STATE(mas, &mm->mm_mt, 0, 0);
 
-	get_cxl_device();
-	struct ownership *o = get_owner_on_mem();
-	pr_info("vm_start: 0x%lx\n", o->vm_start);
-	int i = 0;
-	mas_for_each(&mas, vma, ULONG_MAX) {
-		pr_info("vma %d addr: 0x%lx\n", i, vma->vm_start);
-		i++;
+		get_cxl_device();
+		struct ownership *o = get_owner_on_mem();
+		pr_info("vm_start: 0x%lx\n", o->vm_start);
+		int i = 0;
+		mas_for_each(&mas, vma, ULONG_MAX) {
+			pr_info("vma %d addr: 0x%lx\n", i, vma->vm_start);
+			i++;
+		}
+	} else {
+		ret = -1;
 	}
 	return ret;
 }
@@ -246,7 +252,7 @@ struct ownership *get_owner_on_mem(void) {
 	if (!dax_alive(cxl_dax_device))
 		run_dax(cxl_dax_device);
 	ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
-	if (ret < 0) return ret;
+	if (ret < 0) return NULL;
 	volatile struct ownership *owner_on_mem = (volatile struct ownership *)alloc_table_start;
 	return owner_on_mem;
 
