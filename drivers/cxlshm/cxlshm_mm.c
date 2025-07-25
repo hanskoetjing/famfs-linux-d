@@ -15,6 +15,7 @@
 #include "dax-private.h"
 #include <linux/cxlshm_msg.h>
 #include <asm-generic/cacheflush.h>
+#include <asm-generic/tlbflush.h>
 
 
 #define DEVICE_NAME             "cxl_mmap"
