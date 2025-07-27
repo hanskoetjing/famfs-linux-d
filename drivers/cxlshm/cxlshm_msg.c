@@ -74,7 +74,7 @@ static struct cdev ffs_cdev;
 static struct class *ffs_class;
 static struct socket *server_socket;
 static struct sockaddr_in sin;
-static struct task_struct *acceptor_thread;
+static struct task_struct *aacceptor_thread;
 static int port = 57580;
 static wait_queue_head_t wq;
 static int ready = 0;
@@ -127,7 +127,7 @@ static int tcp_server_start(void) {
 		if (ret < 0) return ret;
 
 		//accept connection inkernel_sendmsg separate thread
-		acceptor_thread = kthread_run(accept_connection, (void *)server_socket, "accept_connection");
+		aacceptor_thread = kthread_run(accept_connection, (void *)server_socket, "accept_connection");
 	}
 	return ret;
 }
@@ -377,7 +377,7 @@ static int __init ffs_helper_init(void) {
 
 static void __exit ffs_helper_exit(void) {
 	//stopping tcp connection stuff
-	kthread_stop(acceptor_thread);
+	kthread_stop(aacceptor_thread);
 	tcp_server_stop();
 
 	//destroying char devices
