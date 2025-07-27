@@ -93,7 +93,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		send_one_message(o.ip_4_addr, 57580, pid_to_send);
 	}
 	o.owner_pid = task->pid;
-	o.vm_start = vma->vm_start;
+	o.vm_start = vmf->address;
 	o.vm_end = vma->vm_end;
 	strscpy(o.ip_4_addr, "127.0.0.1", sizeof(o.ip_4_addr));
 
