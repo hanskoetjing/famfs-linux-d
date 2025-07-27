@@ -85,18 +85,17 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	owned = is_owner(task->pid);
 	pr_info("Is owner? %d\n", owned);
 
-	if (!owned) {
+	if (!owned) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
 		pr_info("Not owned. Try to send message\n");
 		char pid_to_send[16] = {0};
 		snprintf(pid_to_send, 15, "%d", get_owner_on_mem());
 		send_one_message(o.ip_4_addr, 57580, pid_to_send);
-		o.owner_pid = task->pid;
-		strscpy(o.ip_4_addr, "127.0.0.1", sizeof(o.ip_4_addr));
 	}
-
+	o.owner_pid = task->pid;
 	o.vm_start = vma->vm_start;
 	o.vm_end = vma->vm_end;
-	
+	strscpy(o.ip_4_addr, "127.0.0.1", sizeof(o.ip_4_addr));
+
 	unsigned long size = vma->vm_end - vma->vm_start;
 	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
 	pr_info("cxl: fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
