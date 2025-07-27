@@ -17,6 +17,7 @@
 #include <asm-generic/cacheflush.h>
 #include <linux/rcupdate.h>
 #include <linux/sprintf.h>
+#include "conn_manager.h"
 
 
 #define DEVICE_NAME             "cxl_mmap"
@@ -86,10 +87,18 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	owned = is_owner(task->pid);
 
 	if (!owned) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
+		//the mechanism is kinda sht now, should be using better way later. now just make it work first
 		pr_info("Not owned. Current owner: %d caller PID: %d Try to send message\n", get_owner_on_mem(), task->pid);
 		char pid_to_send[16] = {0};
 		snprintf(pid_to_send, 15, "%d", get_owner_on_mem());
 		send_one_message(o.ip_4_addr, 57580, pid_to_send);
+		tcp_server_start();
+		accept_connection();
+		if (strncmp(message, "DONE", sizeof(message)) == 0) {
+			tcp_server_stop();
+		} else {
+			fsleep(1000);
+		}
 	}
 	o.owner_pid = task->pid;
 	o.vm_start = vmf->address;

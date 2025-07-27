@@ -32,7 +32,7 @@
 #include "dax-private.h"
 #include <asm-generic/cacheflush.h>
 #include <linux/rcupdate.h>
-
+#include <linux/cxlshm_msg.h>
 
 #define DEVICE_NAME             "ffs_sync"
 #define CLASS_NAME              "ffs_class"
@@ -74,7 +74,7 @@ static struct cdev ffs_cdev;
 static struct class *ffs_class;
 static struct socket *server_socket;
 static struct sockaddr_in sin;
-static struct task_struct *my_kthread;
+static struct task_struct *acceptor_thread;
 static int port = 57580;
 static wait_queue_head_t wq;
 static int ready = 0;
@@ -124,7 +124,7 @@ static int tcp_server_start(void) {
 		if (ret < 0) return ret;
 
 		//accept connection inkernel_sendmsg separate thread
-		my_kthread = kthread_run(accept_connection, (void *)server_socket, "accept_connection");
+		acceptor_thread = kthread_run(accept_connection, (void *)server_socket, "accept_connection");
 	}
 	return ret;
 }
@@ -227,7 +227,7 @@ int flush_mem_task(pid_t pid) {
 		} else {
 			pr_info("VMA not found\n");
 		}
-
+		send_one_message("127.0.0.1", 57581, "DONE");
 		
 	} else {
 		ret = -1;
@@ -376,7 +376,7 @@ static int __init ffs_helper_init(void) {
 
 static void __exit ffs_helper_exit(void) {
 	//stopping tcp connection stuff
-	kthread_stop(my_kthread);
+	kthread_stop(acceptor_thread);
 	tcp_server_stop();
 
 	//destroying char devices
