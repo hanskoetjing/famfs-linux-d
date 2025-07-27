@@ -15,7 +15,7 @@ static struct task_struct *acceptor_thread;
 
 static int accept_connection(void *socket_in);
 int tcp_server_start(void);
-int tcp_server_stop(void);
+void tcp_server_stop(void);
 void set_port(int port_param);
 
 void set_port(int port_param) {

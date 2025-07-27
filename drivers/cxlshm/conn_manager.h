@@ -8,7 +8,7 @@ int port = DEFAULT_PORT;
 char message[MAX_BUFFER_NET] = {0};
 
 int tcp_server_start(void);
-int tcp_server_stop(void);
+void tcp_server_stop(void);
 
 void set_port(int port_param);
 
