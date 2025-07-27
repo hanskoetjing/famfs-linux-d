@@ -216,9 +216,10 @@ int flush_mem_task(pid_t pid) {
 		mas_for_each(&mas, vma, ULONG_MAX) {
 			pr_info("vma %d addr: 0x%lx\n", i, vma->vm_start);
 			if (vma->vm_start == o->vm_start) {
+				this_vma = vma; 
 				flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
 				zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
-				this_vma = vma; 
+				
 				break;
 			}
 			i++;
