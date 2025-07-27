@@ -199,7 +199,7 @@ struct task_struct *get_task_from_int_pid(pid_t pid) {
 
 int flush_mem_task(pid_t pid) {
 	int ret = 0;
-	struct vm_area_struct *this_vma;
+	struct vm_area_struct *this_vma = NULL;
 	pr_info("pid: %d\n", pid);
 	if (pid != -1) {
 		the_task = get_task_from_int_pid(pid);
@@ -220,10 +220,15 @@ int flush_mem_task(pid_t pid) {
 			}
 			i++;
 		}
+		if (vma) {
+			flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
+			zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
+			pr_info("Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
+		} else {
+			pr_info("VMA not found\n");
+		}
 
-		flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
-		zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
-		pr_info("Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
+		
 	} else {
 		ret = -1;
 	}
