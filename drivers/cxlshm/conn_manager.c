@@ -8,7 +8,7 @@
 #include <linux/types.h>
 #include "conn_manager.h"
 
-static DEFINE_SPINLOCK(ctr_lock);
+DEFINE_SPINLOCK(ctr_lock);
 static struct socket *server_socket;
 static struct sockaddr_in sin;
 static struct task_struct *acceptor_thread;

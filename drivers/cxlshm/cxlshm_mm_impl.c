@@ -95,8 +95,13 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		snprintf(pid_to_send, 15, "%d", get_owner_on_mem());
 		send_one_message(o.ip_4_addr, dest_port, pid_to_send);
 		int i = 0;
+		char r[MAX_BUFFER_NET] = {0};
+		spin_lock(&ctr_lock);
+		memset(r, 0, sizeof(r));
+		strscpy(r, message_received, sizeof(message_received));
+		spin_unlock(&ctr_lock);
 		while (i < 3) {
-			if (strncmp(message_received, "DONE", sizeof(message_received)) == 0) {
+			if (strncmp(r, "DONE", sizeof(r)) == 0) {
 				break;
 			} else {
 				pr_info("waiting response %d\n", i);

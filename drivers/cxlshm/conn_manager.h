@@ -6,6 +6,7 @@
 
 extern int open_port;
 extern char message_received[MAX_BUFFER_NET];
+extern spinlock_t ctr_lock;
 
 int tcp_server_start(void);
 void tcp_server_stop(void);
