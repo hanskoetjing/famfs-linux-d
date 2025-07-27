@@ -17,7 +17,7 @@
 #include <asm-generic/cacheflush.h>
 #include <linux/rcupdate.h>
 #include <linux/sprintf.h>
-#include "conn_manager.h"
+//#include "conn_manager.h"
 #include <linux/delay.h>
 
 
@@ -98,8 +98,8 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		tcp_server_start();
 		int i = 0;
 		while (i < 3) {
-			pr_info("aaaaa %s\n", message);
-			if (strncmp(message, "DONE", sizeof(message)) == 0) {
+			//pr_info("aaaaa %s\n", message);
+			if (strncmp("a", "DONE", sizeof(message)) == 0) {
 				pr_info("aaaaa %s\n", message);
 				break;
 			} else {

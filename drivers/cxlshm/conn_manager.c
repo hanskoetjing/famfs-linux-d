@@ -108,16 +108,6 @@ void tcp_server_stop(void) {
 	}
 }
 EXPORT_SYMBOL(tcp_server_stop);
-static int __init cxl_range_helper_init(void) {	
 
-	return 0;
-}
-
-static void __exit cxl_range_helper_exit(void) {
-}
-
-
-module_init(cxl_range_helper_init);
-module_exit(cxl_range_helper_exit);
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("conn mgr");
