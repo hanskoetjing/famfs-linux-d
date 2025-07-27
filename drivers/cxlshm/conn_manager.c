@@ -46,6 +46,7 @@ int tcp_server_start(void) {
 	}
 	return ret;
 }
+EXPORT_SYMBOL(tcp_server_start);
 
 static int accept_connection(void *socket_in) {
 	int ret_val = 0;
@@ -108,3 +109,4 @@ static void tcp_server_stop(void) {
 		server_socket = NULL;
 	}
 }
+EXPORT_SYMBOL(tcp_server_stop);

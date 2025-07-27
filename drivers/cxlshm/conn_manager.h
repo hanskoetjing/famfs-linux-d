@@ -7,7 +7,6 @@
 int port = DEFAULT_PORT;
 char message[MAX_BUFFER_NET] = {0};
 
-int accept_connection(void *socket_in);
 int tcp_server_start(void);
 int tcp_server_stop(void);
 
