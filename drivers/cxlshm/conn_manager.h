@@ -4,8 +4,8 @@
 #define MAX_BUFFER_NET          128
 #define DEFAULT_PORT            57581
 
-int port = DEFAULT_PORT;
-char message[MAX_BUFFER_NET] = {0};
+int open_port = DEFAULT_PORT;
+char message_received[MAX_BUFFER_NET] = {0};
 
 int tcp_server_start(void);
 void tcp_server_stop(void);

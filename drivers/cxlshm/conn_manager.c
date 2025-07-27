@@ -19,19 +19,19 @@ void tcp_server_stop(void);
 void set_port(int port_param);
 
 void set_port(int port_param) {
-    port = port_param;
+    open_port = port_param;
 }
 
 int tcp_server_start(void) {
 	int ret = 0;
 	if (!server_socket) {
-		pr_info("Start TCP server on port %d\n", port);
+		pr_info("Start TCP server on port %d\n", open_port);
 		
 		//initialise socket address
 		memset(&sin, 0, sizeof(sin));
 		sin.sin_addr.s_addr = INADDR_ANY;
 		sin.sin_family = AF_INET;
-		sin.sin_port = htons(port);
+		sin.sin_port = htons(open_port);
 
 		//create socket, bind, and listen
 		ret = sock_create_kern(&init_net, AF_INET, SOCK_STREAM, IPPROTO_TCP, &server_socket);
@@ -71,10 +71,10 @@ static int accept_connection(void *socket_in) {
 				len = kernel_recvmsg(new_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
 				if (len > 0) {
 					spin_lock(&ctr_lock);
-					memset(message, 0, sizeof(message));
-					strscpy(message, buf, sizeof(buf));
+					memset(message_received, 0, sizeof(message_received));
+					strscpy(message_received, buf, sizeof(buf));
 					spin_unlock(&ctr_lock);
-					pr_info("Data: %s\n", message);
+					pr_info("Data: %s\n", message_received);
 				} else if (len == 0) {
 					pr_info("Client closed connection.\n");
 					break;
@@ -102,7 +102,7 @@ void tcp_server_stop(void) {
         kthread_stop(acceptor_thread);
     }
 	if (server_socket) {
-		pr_info("Release server socket on port %d\n", port);
+		pr_info("Release server socket on port %d\n", open_port);
 		sock_release(server_socket);
 		server_socket = NULL;
 	}
