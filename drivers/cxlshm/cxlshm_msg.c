@@ -85,6 +85,8 @@ struct pid *the_pid;
 static struct dax_device *cxl_dax_device;
 static char device_path[FILE_PATH_LENGTH];
 struct ownership *owner_from_net;
+int dest_port = 57581;
+char dest_ip_4_addr[16] = {0};
 
 int accept_connection(void *socket_in);
 int check_commands(char *message);
@@ -225,7 +227,7 @@ int flush_mem_task(pid_t pid) {
 		} else {
 			pr_info("VMA not found\n");
 		}
-		send_one_message("127.0.0.1", 57581, "DONE");
+		send_one_message(, dest_port, "DONE");
 	} else {
 		ret = -1;
 	}
@@ -361,6 +363,7 @@ static int __init ffs_helper_init(void) {
 	//init tcp and poll
 	tcp_server_start();
 	init_waitqueue_head(&wq);
+	strscpy(dest_ip_4_addr, "127.0.0.1", sizeof(dest_ip_4_addr));
 
 	//init others
 	strscpy(ffs_file_path, DUMMY_FILE_PATH, 64);

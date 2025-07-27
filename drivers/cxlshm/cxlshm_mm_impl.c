@@ -53,6 +53,7 @@ static pfn_t begin_pfn, end_pfn;
 static struct vm_area_struct *this_vma;
 static void *alloc_table_start;
 static struct ownership o;
+int dest_port = 57580;
 
 static int mmap_helper(struct file *filp, struct vm_area_struct *vma);
 static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
@@ -89,13 +90,10 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	owned = is_owner(task->pid);
 
 	if (!owned) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
-		//the mechanism is kinda sht now, should be using better way later. now just make it work first
 		pr_info("Not owned. Current owner: %d caller PID: %d Try to send message\n", get_owner_on_mem(), task->pid);
 		char pid_to_send[16] = {0};
 		snprintf(pid_to_send, 15, "%d", get_owner_on_mem());
-		send_one_message(o.ip_4_addr, 57580, pid_to_send);
-		//start a tcp server to receive response
-		tcp_server_start();
+		send_one_message(o.ip_4_addr, dest_port, pid_to_send);
 		int i = 0;
 		while (i < 3) {
 			if (strncmp(message_received, "DONE", sizeof(message_received)) == 0) {
@@ -106,7 +104,6 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 				msleep(1000);
 			}
 		}
-		tcp_server_stop();
 	}
 	o.owner_pid = task->pid;
 	o.vm_start = vmf->address;
@@ -262,13 +259,18 @@ static int __init cxl_range_helper_init(void) {
 	ffs_class = class_create(CLASS_NAME);
 	device_create(ffs_class, NULL, dev_num, NULL, DEVICE_NAME);
 
-	//init others
+	//init cxl
 	strscpy(device_path, "/dev/dax0.0", sizeof(device_path)); //default device, can be altered using ioctl
 	pr_info("using default path: %s\n", device_path);
-	
 	get_cxl_device();
 	pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
 	memset(alloc_table_start, 0, sizeof(struct ownership));
+
+	//init tcp server
+	set_port(57581);
+	tcp_server_start();
+
+	//init done
 	pr_info("cxlshm_mm: loaded\n");
 	return 0;
 }
@@ -279,6 +281,11 @@ static void __exit cxl_range_helper_exit(void) {
 	class_destroy(ffs_class);
 	cdev_del(&ffs_cdev);
 	unregister_chrdev_region(dev_num, 1);
+
+	//stopping tcp server
+	tcp_server_stop();
+
+	//exit done
 	pr_info("cxlshm_mm: unloaded\n"); 
 }
 
