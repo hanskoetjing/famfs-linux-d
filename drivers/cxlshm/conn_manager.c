@@ -100,7 +100,7 @@ static int accept_connection(void *socket_in) {
 	return ret_val;
 }
 
-static void tcp_server_stop(void) {
+void tcp_server_stop(void) {
     if (task_is_running(acceptor_thread) || acceptor_thread->__state == TASK_NORMAL)
         kthread_stop(acceptor_thread);
 	if (server_socket) {
