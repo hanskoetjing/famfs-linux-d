@@ -210,11 +210,12 @@ int flush_mem_task(pid_t pid) {
 		MA_STATE(mas, &mm->mm_mt, 0, 0);
 		get_cxl_device();
 		struct ownership *o = get_owner_on_mem();
+		unsigned long vm_from_mem = o->vm_start;
 		pr_info("pid %d vm_start: 0x%lx\n", o->owner_pid, o->vm_start);
 		int i = 0;
 		mas_for_each(&mas, vma, ULONG_MAX) {
 			pr_info("vma %d addr: 0x%lx\n", i, vma->vm_start);
-			if (vma->vm_start == o->vm_start) {
+			if (vma->vm_start == vm_from_mem) {
 				this_vma = vma; 
 				flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
 				zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
