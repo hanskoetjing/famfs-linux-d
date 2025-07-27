@@ -98,9 +98,9 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		tcp_server_start();
 		int i = 0;
 		while (i < 3) {
-			pr_info("aaaaa %s\n", message);
+			pr_info("aaaaa %s\n", message_received);
 			if (strncmp("a", "DONE", sizeof("a")) == 0) {
-				pr_info("aaaaa %s\n", message);
+				pr_info("aaaaa %s\n", message_received);
 				break;
 			} else {
 				pr_info("waiting response %d\n", i);
