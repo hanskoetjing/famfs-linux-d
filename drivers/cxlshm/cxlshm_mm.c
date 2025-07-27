@@ -98,6 +98,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		int i = 0;
 		while (i < 3) {
 			if (strncmp(message, "DONE", sizeof(message)) == 0) {
+				pr_info("aaaaa %s\n", message);
 				tcp_server_stop();
 				break;
 			} else {

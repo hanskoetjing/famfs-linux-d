@@ -201,17 +201,13 @@ struct task_struct *get_task_from_int_pid(pid_t pid) {
 int flush_mem_task(pid_t pid) {
 	int ret = 0;
 	struct vm_area_struct *this_vma = NULL;
-	pr_info("pid: %d\n", pid);
 	if (pid != -1) {
 		the_task = get_task_from_int_pid(pid);
-		pr_info("task: %d\n", the_task->pid);
 		struct mm_struct *mm = the_task->mm;
 		struct vm_area_struct *vma;
 		MA_STATE(mas, &mm->mm_mt, 0, 0);
-
 		get_cxl_device();
 		struct ownership *o = get_owner_on_mem();
-
 		pr_info("pid %d vm_start: 0x%lx\n", o->owner_pid, o->vm_start);
 		int i = 0;
 		mas_for_each(&mas, vma, ULONG_MAX) {
@@ -230,7 +226,6 @@ int flush_mem_task(pid_t pid) {
 			pr_info("VMA not found\n");
 		}
 		send_one_message("127.0.0.1", 57581, "DONE");
-		
 	} else {
 		ret = -1;
 	}
