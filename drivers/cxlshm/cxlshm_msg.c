@@ -227,7 +227,7 @@ int flush_mem_task(pid_t pid) {
 		} else {
 			pr_info("VMA not found\n");
 		}
-		send_one_message(, dest_port, "DONE");
+		send_one_message(dest_ip_4_addr, dest_port, "DONE");
 	} else {
 		ret = -1;
 	}
