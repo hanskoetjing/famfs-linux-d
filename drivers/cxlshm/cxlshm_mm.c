@@ -84,10 +84,9 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	vma = this_vma = vmf->vma;
 	task = rcu_dereference(vma->vm_mm->owner);
 	owned = is_owner(task->pid);
-	pr_info("Is owner? %d\n", owned);
 
 	if (!owned) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
-		pr_info("Not owned. Try to send message\n");
+		pr_info("Not owned. Current owner: %d caller PID: %d Try to send message\n", get_owner_on_mem(), task->pid);
 		char pid_to_send[16] = {0};
 		snprintf(pid_to_send, 15, "%d", get_owner_on_mem());
 		send_one_message(o.ip_4_addr, 57580, pid_to_send);
@@ -230,8 +229,8 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 			get_cxl_device();
 			break;
 		case IOCTL_FLUSH_CACHE: //as ioctl (temporary manual invoke)
-			flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
-			zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
+			//flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
+			//zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
 			pr_info("Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
 			break;
 		default:
