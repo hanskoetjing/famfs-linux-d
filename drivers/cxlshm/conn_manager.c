@@ -111,3 +111,6 @@ void tcp_server_stop(void) {
 	}
 }
 EXPORT_SYMBOL(tcp_server_stop);
+
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("conn mgr");
