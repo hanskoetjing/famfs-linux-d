@@ -210,7 +210,8 @@ int flush_mem_task(pid_t pid) {
 
 		get_cxl_device();
 		struct ownership *o = get_owner_on_mem();
-		pr_info("vm_start: 0x%lx\n", o->vm_start);
+
+		pr_info("pid %d vm_start: 0x%lx\n", o->owner_pid, o->vm_start);
 		int i = 0;
 		mas_for_each(&mas, vma, ULONG_MAX) {
 			pr_info("vma %d addr: 0x%lx\n", i, vma->vm_start);

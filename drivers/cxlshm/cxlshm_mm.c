@@ -97,6 +97,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		if (strncmp(message, "DONE", sizeof(message)) == 0) {
 			tcp_server_stop();
 		} else {
+			pr_info("waiting response\n");
 			fsleep(1000);
 		}
 	}
