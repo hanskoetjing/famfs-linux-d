@@ -98,6 +98,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		while (i < 10) {
 			pr_info("received %s\n", message_received);
 			if (strncmp(message_received, "DONE", sizeof(message_received)) == 0) {
+				memset(message_received, 0, sizeof(message_received));
 				break;
 			} else {
 				pr_info("waiting response %d\n", i);
