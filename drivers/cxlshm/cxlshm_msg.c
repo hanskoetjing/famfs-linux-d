@@ -219,14 +219,11 @@ int flush_mem_task(pid_t pid) {
 				this_vma = vma; 
 				flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
 				zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
-				
 				break;
 			}
 			i++;
 		}
 		if (this_vma) {
-			flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
-			zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
 			pr_info("Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
 		} else {
 			pr_info("VMA not found\n");

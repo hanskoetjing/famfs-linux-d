@@ -94,11 +94,16 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		snprintf(pid_to_send, 15, "%d", get_owner_on_mem());
 		send_one_message(o.ip_4_addr, 57580, pid_to_send);
 		tcp_server_start();
-		if (strncmp(message, "DONE", sizeof(message)) == 0) {
-			tcp_server_stop();
-		} else {
-			pr_info("waiting response\n");
-			msleep(1000);
+		int i = 0;
+		while (i < 3) {
+			if (strncmp(message, "DONE", sizeof(message)) == 0) {
+				tcp_server_stop();
+				break;
+			} else {
+				pr_info("waiting response %d\n", i);
+				i++;
+				msleep(1000);
+			}
 		}
 	}
 	o.owner_pid = task->pid;
@@ -211,7 +216,6 @@ int get_cxl_device(void) {
 			if (ret < 0) return ret;
 			end_pfn = begin_pfn;
 			end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
-			pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
 			pr_info("Current owner on mem: %d\n", get_owner_on_mem());
 		} else {
 			pr_info("no cxl_dax_device\n");
@@ -239,9 +243,7 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 			get_cxl_device();
 			break;
 		case IOCTL_FLUSH_CACHE: //as ioctl (temporary manual invoke)
-			//flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
-			//zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
-			pr_info("Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
+			pr_info("this ioctl done nothing now. page invalidation done by message\n");
 			break;
 		default:
 			return -ENOTTY;
@@ -261,8 +263,11 @@ static int __init cxl_range_helper_init(void) {
 	//init others
 	strscpy(device_path, "/dev/dax0.0", sizeof(device_path)); //default device, can be altered using ioctl
 	pr_info("using default path: %s\n", device_path);
-	pr_info("cxlshm_mm: loaded\n");
+	
 	get_cxl_device();
+	pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
+	memset(alloc_table_start, 0, sizeof(struct ownership));
+	pr_info("cxlshm_mm: loaded\n");
 	return 0;
 }
 
