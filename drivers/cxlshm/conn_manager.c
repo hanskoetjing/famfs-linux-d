@@ -46,7 +46,7 @@ int tcp_server_start(void) {
 	}
 	return ret;
 }
-EXPORT_SYMBOL(tcp_server_start);
+//EXPORT_SYMBOL(tcp_server_start);
 
 static int accept_connection(void *socket_in) {
 	int ret_val = 0;
@@ -107,7 +107,7 @@ void tcp_server_stop(void) {
 		server_socket = NULL;
 	}
 }
-EXPORT_SYMBOL(tcp_server_stop);
+//EXPORT_SYMBOL(tcp_server_stop);
 
-MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("conn mgr");
+///MODULE_LICENSE("GPL");
+//MODULE_DESCRIPTION("conn mgr");
