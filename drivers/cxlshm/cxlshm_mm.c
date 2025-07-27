@@ -46,7 +46,7 @@ static char device_path[FILE_PATH_LENGTH];
 static dev_t dev_num, dax_dev_num;
 static struct cdev ffs_cdev;
 static struct class *ffs_class;
-static struct dax_device *cxl_dax_device;
+static struct dax_device *cxl_dax_device = NULL;
 static pfn_t begin_pfn, end_pfn;
 static struct vm_area_struct *this_vma;
 static void *alloc_table_start;
@@ -57,6 +57,7 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 int get_cxl_device(void);
 int is_owner(pid_t pid);
 pid_t get_owner_on_mem(void);
+int read_allocation_table(void);
 
 
 static const struct file_operations fops = {
@@ -162,12 +163,16 @@ out_path_put:
 	return err;
 }
 
-pid_t get_owner_on_mem(void) {
-	int ret = 0;
+int read_allocation_table(void) {
 	if (!cxl_dax_device) return -ENXIO;
 	if (!dax_alive(cxl_dax_device))
 		run_dax(cxl_dax_device);
-	ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
+	return dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
+}
+
+pid_t get_owner_on_mem(void) {
+	int ret = 0;
+	ret = read_allocation_table();
 	if (ret < 0) return ret;
 	volatile struct ownership *owner_on_mem = (volatile struct ownership *)alloc_table_start;
 	if (owner_on_mem && owner_on_mem->owner_pid > 0) {
@@ -193,15 +198,12 @@ int get_cxl_device(void) {
 		cxl_dax_device = dax_dev_get(dax_dev_num);
 		if (cxl_dax_device) {
 			pr_info("got dax_device\n");
-			dax_write_cache(cxl_dax_device, false);
-			if (!dax_alive(cxl_dax_device))
-				run_dax(cxl_dax_device);
-			int ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
+			int ret = read_allocation_table();
 			if (ret < 0) return ret;
 			end_pfn = begin_pfn;
 			end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
 			pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
-			pr_info("Owner on mem: %d\n", get_owner_on_mem());
+			pr_info("Current owner on mem: %d\n", get_owner_on_mem());
 		} else {
 			pr_info("no cxl_dax_device\n");
 		}
