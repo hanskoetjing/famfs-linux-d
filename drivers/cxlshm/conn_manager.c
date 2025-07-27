@@ -46,7 +46,7 @@ int tcp_server_start(void) {
 	}
 	return ret;
 }
-//EXPORT_SYMBOL(tcp_server_start);
+EXPORT_SYMBOL(tcp_server_start);
 
 static int accept_connection(void *socket_in) {
 	int ret_val = 0;
@@ -107,7 +107,17 @@ void tcp_server_stop(void) {
 		server_socket = NULL;
 	}
 }
-//EXPORT_SYMBOL(tcp_server_stop);
+EXPORT_SYMBOL(tcp_server_stop);
+static int __init cxl_range_helper_init(void) {	
 
-///MODULE_LICENSE("GPL");
-//MODULE_DESCRIPTION("conn mgr");
+	return 0;
+}
+
+static void __exit cxl_range_helper_exit(void) {
+}
+
+
+module_init(cxl_range_helper_init);
+module_exit(cxl_range_helper_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("conn mgr");
