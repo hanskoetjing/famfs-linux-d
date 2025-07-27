@@ -93,7 +93,6 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		snprintf(pid_to_send, 15, "%d", get_owner_on_mem());
 		send_one_message(o.ip_4_addr, 57580, pid_to_send);
 		tcp_server_start();
-		accept_connection();
 		if (strncmp(message, "DONE", sizeof(message)) == 0) {
 			tcp_server_stop();
 		} else {

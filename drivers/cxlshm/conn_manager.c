@@ -13,7 +13,7 @@ static struct socket *server_socket;
 static struct sockaddr_in sin;
 static struct task_struct *acceptor_thread;
 
-int accept_connection(void *socket_in);
+static int accept_connection(void *socket_in);
 int tcp_server_start(void);
 int tcp_server_stop(void);
 void set_port(int port_param);
@@ -47,7 +47,7 @@ int tcp_server_start(void) {
 	return ret;
 }
 
-int accept_connection(void *socket_in) {
+static int accept_connection(void *socket_in) {
 	int ret_val = 0;
 	struct socket *srv_socket = (struct socket *)socket_in;
 	struct socket *new_socket;
