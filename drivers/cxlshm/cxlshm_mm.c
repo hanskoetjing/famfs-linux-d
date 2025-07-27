@@ -18,6 +18,7 @@
 #include <linux/rcupdate.h>
 #include <linux/sprintf.h>
 #include "conn_manager.h"
+#include <linux/delay.h>
 
 
 #define DEVICE_NAME             "cxl_mmap"
