@@ -94,12 +94,13 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		char pid_to_send[16] = {0};
 		snprintf(pid_to_send, 15, "%d", get_owner_on_mem());
 		send_one_message(o.ip_4_addr, 57580, pid_to_send);
+		//start a tcp server to receive response
 		tcp_server_start();
 		int i = 0;
 		while (i < 3) {
+			pr_info("aaaaa %s\n", message);
 			if (strncmp(message, "DONE", sizeof(message)) == 0) {
 				pr_info("aaaaa %s\n", message);
-				tcp_server_stop();
 				break;
 			} else {
 				pr_info("waiting response %d\n", i);
@@ -107,6 +108,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 				msleep(1000);
 			}
 		}
+		tcp_server_stop();
 	}
 	o.owner_pid = task->pid;
 	o.vm_start = vmf->address;

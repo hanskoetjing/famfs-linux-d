@@ -75,9 +75,6 @@ static int accept_connection(void *socket_in) {
 					strscpy(message, buf, sizeof(buf));
 					spin_unlock(&ctr_lock);
 					pr_info("Data: %s\n", message);
-					int tmp = 0;
-					int res = kstrtoint(message, 10, &tmp);
-					if (res < 0) tmp = -1;
 				} else if (len == 0) {
 					pr_info("Client closed connection.\n");
 					break;
