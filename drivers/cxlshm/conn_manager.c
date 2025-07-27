@@ -104,7 +104,7 @@ static void tcp_server_stop(void) {
     if (task_is_running(acceptor_thread) || acceptor_thread->__state == TASK_NORMAL)
         kthread_stop(acceptor_thread);
 	if (server_socket) {
-		pr_info("Release server socket on port %d\n", OPEN_TCP_PORT);
+		pr_info("Release server socket on port %d\n", port);
 		sock_release(server_socket);
 		server_socket = NULL;
 	}
