@@ -92,6 +92,7 @@ struct task_struct *get_task_from_int_pid(pid_t pid);
 int flush_mem_task(pid_t pid);
 int get_cxl_device(void);
 struct ownership *get_owner_on_mem(void);
+int lookup_daxdev(const char *pathname, dev_t *devno);
 
 int check_commands(char *message) {
 	int result = -1;

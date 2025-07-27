@@ -60,6 +60,7 @@ int get_cxl_device(void);
 int is_owner(pid_t pid);
 pid_t get_owner_on_mem(void);
 int read_allocation_table(void);
+int lookup_daxdev(const char *pathname, dev_t *devno);
 
 
 static const struct file_operations fops = {
