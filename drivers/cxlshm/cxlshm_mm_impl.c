@@ -100,7 +100,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		memset(r, 0, sizeof(r));
 		strscpy(r, message_received, sizeof(message_received));
 		spin_unlock(&ctr_lock);
-		while (i < 3) {
+		while (i < 10) {
 			if (strncmp(r, "DONE", sizeof(r)) == 0) {
 				break;
 			} else {
