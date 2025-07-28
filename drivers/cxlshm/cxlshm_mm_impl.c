@@ -28,7 +28,6 @@
 #define CLASS_NAME              "cxl_mmap_class"
 #define FILE_PATH_LENGTH        32
 #define FAT_SIZE				2097152
-#define MAX_TIMEOUT_MSEC		3000
 #define FAT_OFFSET				FAT_SIZE / PAGE_SIZE
 
 #define IOCTL_MAGIC             0xCC
@@ -88,7 +87,8 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		pr_info("Not owned. Current owner: %d caller PID: %d Try to send message\n", get_owner_on_mem(), task->pid);
 		char pid_to_send[16] = {0};
 		snprintf(pid_to_send, 15, "PID:%d", get_owner_on_mem());
-		send_one_message(o.ip_4_addr, o.port, pid_to_send);
+		tcp_client_start(o.ip_4_addr, o.port);
+		send_message(pid_to_send);
 		int i = 0;
 		char received_copy[MAX_BUFFER_NET] = {0};
 		unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
@@ -103,6 +103,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 			} else {
 				pr_info("not a completion message, maybe handled later %d\n", i);
 			}
+			tcp_client_stop();
 		} else if (completion_ret_val == 0) {
 			pr_info("timeout occured. retrying\n");
 			return -EAGAIN;

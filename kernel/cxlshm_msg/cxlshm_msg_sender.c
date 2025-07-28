@@ -8,7 +8,7 @@
 
 static char ip_4_addr[16] = {0};
 static int port = 0;
-static struct socket *client_socket;
+struct socket *client_socket;
 static struct sockaddr_in client_sockaddr;
 
 #define MAX_BUFFER_NET			128
