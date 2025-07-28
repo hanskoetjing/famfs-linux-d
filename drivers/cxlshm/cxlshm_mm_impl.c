@@ -113,7 +113,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 			} else {
 				pr_info("not a completion message, maybe handled later %d\n", i);
 			}
-		} else (completion_ret_val == 0) {
+		} else if (completion_ret_val == 0) {
 			pr_info("timeout occured. retrying\n");
 			return -EAGAIN;
 		} else {
