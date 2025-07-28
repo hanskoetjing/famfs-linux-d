@@ -44,10 +44,10 @@ int invalidate_mem_area(void *data) {
     char *received_copy = kzalloc(MAX_BUFFER_NET * sizeof(char), GFP_NOWAIT); //using nowait as this is IO
     memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
     unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
-
+    int i = 0;
     while(!kthread_should_stop()) {
-        long completion_ret_val = wait_for_completion_interruptible_timeout(&ownership_transfer_arrived, timeout);
-        if (completion_ret_val > 0) {
+        long completion_ret_val = wait_for_completion_interruptible(&ownership_transfer_arrived);
+        if (completion_ret_val >= 0) {
             spin_lock(&ctr_lock);
             strscpy(received_copy, ownership_transfer_message, sizeof(received_copy));
             memset(ownership_transfer_message, 0, sizeof(ownership_transfer_message));
@@ -63,15 +63,12 @@ int invalidate_mem_area(void *data) {
             } else {
                 pr_info(THIS_MOD "not an ownership transfer message, maybe handled later\n");
             }
-        } else if (completion_ret_val == 0) {
-            //pr_info(THIS_MOD "timeout occured. retrying\n");
-            //counter++;
         } else {
             pr_info(THIS_MOD "interrupted\n");
             return -EINTR;
         }
     }
-
+    pr_info(THIS_MOD "thread returns\n");
     return 0;
 }
 
@@ -130,7 +127,6 @@ static int __init cxlshm_invalidator_init(void) {
 
 static void __exit cxlshm_invalidator_exit(void) {
     set_ownership_completion(NULL);
-    complete_all(&ownership_transfer_arrived);
     if (task_is_running(invalidator_thread)) {
         pr_info(THIS_MOD ": stop invalidator thread\n"); 
         kthread_stop(invalidator_thread);
