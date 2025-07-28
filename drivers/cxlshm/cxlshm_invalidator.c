@@ -129,6 +129,8 @@ static int __init cxlshm_invalidator_init(void) {
 }
 
 static void __exit cxlshm_invalidator_exit(void) {
+    set_ownership_completion(NULL);
+    complete_all(&ownership_transfer_arrived);
     if (task_is_running(invalidator_thread)) {
         pr_info(THIS_MOD ": stop invalidator thread\n"); 
         kthread_stop(invalidator_thread);

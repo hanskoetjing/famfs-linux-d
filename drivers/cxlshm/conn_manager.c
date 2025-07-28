@@ -109,7 +109,8 @@ static int accept_connection(void *socket_in) {
 						complete(&is_complete);
 					} else if (ready == 2) {
 						pr_info(THIS_MOD "Invalidation request %s\n", ownership_transfer_message);
-						complete(ownership_transfer_arrived);
+						if (ownership_transfer_arrived != NULL)
+							complete(ownership_transfer_arrived);
 					}
 				} else if (len == 0) {
 					pr_info(THIS_MOD "client closed connection.\n");
