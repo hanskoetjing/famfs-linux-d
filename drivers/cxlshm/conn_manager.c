@@ -133,14 +133,19 @@ void tcp_server_stop(void) {
 EXPORT_SYMBOL(tcp_server_stop);
 
 static int __init connection_manager_init(void) {
+	int ret = 0;
 	//init tcp server
 	set_port(57580);
-	tcp_server_start();
+	ret = tcp_server_start();
+
+	return ret;
 }
 
 static int __exit connection_manager_exit(void) {
 	//stopping tcp server
 	tcp_server_stop();
+
+	return 0;
 }
 
 module_init(connection_manager_init);
