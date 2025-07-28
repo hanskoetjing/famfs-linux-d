@@ -6,8 +6,10 @@
 
 extern int open_port;
 extern char message_received[MAX_BUFFER_NET];
+extern char ownership_transfer_message[MAX_BUFFER_NET];
 extern spinlock_t ctr_lock;
 extern struct completion is_complete;
+extern struct completion ownership_transfer_arrived;
 
 int tcp_server_start(void);
 void tcp_server_stop(void);

@@ -9,13 +9,17 @@
 #include <linux/completion.h> 
 #include "conn_manager.h"
 
+#define THIS_MOD "Connection Manager: "
+
 DEFINE_SPINLOCK(ctr_lock);
 DECLARE_COMPLETION(is_complete);
+DECLARE_COMPLETION(ownership_transfer_arrived);
 static struct socket *server_socket;
 static struct sockaddr_in sin;
 static struct task_struct *acceptor_thread;
 int open_port = DEFAULT_PORT;
 char message_received[MAX_BUFFER_NET] = {0};
+char ownership_transfer_message[MAX_BUFFER_NET] = {0};
 
 static int accept_connection(void *socket_in);
 int tcp_server_start(void);
@@ -29,7 +33,7 @@ void set_port(int port_param) {
 int tcp_server_start(void) {
 	int ret = 0;
 	if (!server_socket) {
-		pr_info("Conn mgr: start TCP server on port %d\n", open_port);
+		pr_info(THIS_MOD "start TCP server on port %d\n", open_port);
 		
 		//initialise socket address
 		memset(&sin, 0, sizeof(sin));
@@ -57,7 +61,7 @@ static int accept_connection(void *socket_in) {
 	struct socket *srv_socket = (struct socket *)socket_in;
 	struct socket *new_socket;
 	char buf[MAX_BUFFER_NET] = {0};
-	pr_info("Waiting for connection\n");
+	pr_info(THIS_MOD "waiting for connection\n");
 	while(!kthread_should_stop()) {
 		kernel_accept(srv_socket, &new_socket, 0);
 		if (new_socket) {
@@ -69,7 +73,7 @@ static int accept_connection(void *socket_in) {
 				.iov_len = sizeof(buf) - 1
 			};
 			kernel_getpeername(new_socket, (struct sockaddr *)&connected_client_addr);
-			pr_info("Conn mgr: connected! client: %pI4\n", &connected_client_addr.sin_addr);
+			pr_info(THIS_MOD "connected! client: %pI4\n", &connected_client_addr.sin_addr);
 			int len = -1;
 			for(;;) {
 				len = kernel_recvmsg(new_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
@@ -77,14 +81,22 @@ static int accept_connection(void *socket_in) {
 					int ready = 0;
 					spin_lock(&ctr_lock);
 					memset(message_received, 0, sizeof(message_received));
-					strscpy(message_received, buf, sizeof(buf));
-					//pr_info("Conn mgr: received data: %s\n", message_received);
-					if (strncmp(message_received, "DONE", 4) == 0) ready = 1;
+					if (strncmp(buf, "DONE", 4) == 0) {
+						strscpy(message_received, buf, sizeof(buf));
+						ready = 1;
+					} else if (strncmp(buf, "PID:", 4) == 0) {
+						strscpy(ownership_transfer_message, buf, sizeof(buf));
+						ready = 2;
+					}
 					spin_unlock(&ctr_lock);
-					if (ready)
+					if (ready == 1)
 						complete(&is_complete);
+					else if (ready == 2)
+						complete(&ownership_transfer_arrived);
+					else
+
 				} else if (len == 0) {
-					pr_info("Conn mgr: client closed connection.\n");
+					pr_info(THIS_MOD "client closed connection.\n");
 					break;
 				} else if (len == -EAGAIN) {
 					msleep(10);
@@ -98,10 +110,10 @@ static int accept_connection(void *socket_in) {
 			}
 			sock_release(new_socket);
 			new_socket = NULL;
-			pr_info("Conn mgr: done receiving data\n");
+			pr_info(THIS_MOD "done receiving data\n");
 		}
 	}
-	pr_info("Conn mgr: acceptor thread exit. Bye\n");
+	pr_info(THIS_MOD "acceptor thread exit. Bye\n");
 	return ret_val;
 }
 
@@ -110,7 +122,7 @@ void tcp_server_stop(void) {
         kthread_stop(acceptor_thread);
     }
 	if (server_socket) {
-		pr_info("Conn mgr: release server socket on port %d\n", open_port);
+		pr_info(THIS_MOD "release server socket on port %d\n", open_port);
 		sock_release(server_socket);
 		server_socket = NULL;
 	}

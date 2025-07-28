@@ -91,7 +91,6 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	vma = this_vma = vmf->vma;
 	task = rcu_dereference(vma->vm_mm->owner);
 	owned = is_owner(task->pid);
-	pr_info("owner: %d\n", owned);
 	int done_invalidating = 0;
 
 	if (owned == 0) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
