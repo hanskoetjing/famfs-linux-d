@@ -141,11 +141,10 @@ static int __init connection_manager_init(void) {
 	return ret;
 }
 
-static int __exit connection_manager_exit(void) {
+static void __exit connection_manager_exit(void) {
 	//stopping tcp server
 	tcp_server_stop();
 
-	return 0;
 }
 
 module_init(connection_manager_init);
