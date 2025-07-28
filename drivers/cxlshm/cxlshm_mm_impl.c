@@ -204,8 +204,8 @@ pid_t get_owner_on_mem(volatile struct ownership **owner_on_mem) {
 	ret = read_allocation_table();
 	if (ret < 0) return ret;
 	*owner_on_mem = (volatile struct ownership *)alloc_table_start;
-	if (owner_on_mem && owner_on_mem->owner_pid > 0) {
-		return owner_on_mem->owner_pid;
+	if (*owner_on_mem && *owner_on_mem->owner_pid > 0) {
+		return *owner_on_mem->owner_pid;
 	} else {
 		return -ENXIO;
 	}
