@@ -91,7 +91,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	vma = this_vma = vmf->vma;
 	task = rcu_dereference(vma->vm_mm->owner);
 	owned = is_owner(task->pid);
-
+	pr_info("owner: %d\n", owned);
 	int done_invalidating = 0;
 
 	if (!owned) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
@@ -109,7 +109,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 			memset(message_received, 0, sizeof(message_received));
 			spin_unlock(&ctr_lock);
 			if (strncmp(received_copy, "DONE", 4) == 0) {
-				done_invalidating = 1;
+				owned = 1;
 			} else {
 				pr_info("not a completion message, maybe handled later %d\n", i);
 			}
@@ -120,9 +120,11 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 			pr_info("interrupted\n");
 			return -EAGAIN;
 		}
-		
+	} else {
+		//temporary fix owned to 1
+		owned = 1;
 	}
-	if (done_invalidating) {
+	if (owned) {
 		o.owner_pid = task->pid;
 		o.vm_start = vmf->address;
 		o.vm_end = vma->vm_end;
