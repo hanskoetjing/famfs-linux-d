@@ -12,19 +12,22 @@
 #include <linux/path.h>
 #include <linux/dax.h>
 #include <linux/ioport.h>
-#include "dax-private.h"
-#include <linux/cxlshm_msg.h>
 #include <asm-generic/cacheflush.h>
 #include <linux/rcupdate.h>
 #include <linux/sprintf.h>
-#include "conn_manager.h"
 #include <linux/delay.h>
+#include <linux/jiffies.h>
+#include <linux/completion.h>
 
+#include <linux/cxlshm_msg.h>
+#include "dax-private.h"
+#include "conn_manager.h"
 
 #define DEVICE_NAME             "cxl_mmap"
 #define CLASS_NAME              "cxl_mmap_class"
 #define FILE_PATH_LENGTH        32
 #define FAT_SIZE				2097152
+#define MAX_TIMEOUT_MSEC		3000
 #define FAT_OFFSET				FAT_SIZE / PAGE_SIZE
 
 #define IOCTL_MAGIC             0xCC
@@ -89,48 +92,64 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	task = rcu_dereference(vma->vm_mm->owner);
 	owned = is_owner(task->pid);
 
+	int done_invalidating = 0;
+
 	if (!owned) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
 		pr_info("Not owned. Current owner: %d caller PID: %d Try to send message\n", get_owner_on_mem(), task->pid);
 		char pid_to_send[16] = {0};
 		snprintf(pid_to_send, 15, "%d", get_owner_on_mem());
 		send_one_message(o.ip_4_addr, dest_port, pid_to_send);
 		int i = 0;
-		while (i < 10) {
-			pr_info("received %s\n", message_received);
-			if (strncmp(message_received, "DONE", sizeof(message_received)) == 0) {
-				memset(message_received, 0, sizeof(message_received));
-				break;
+		char received_copy[MAX_BUFFER_NET] = {0};
+		unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
+		long completion_ret_val = wait_for_completion_interruptible_timeout(&is_complete, timeout);
+		if (completion_ret_val > 0) {
+			spin_lock(&ctr_lock);
+			strscpy(received_copy, message_received, sizeof(message_received));
+			memset(message_received, 0, sizeof(message_received));
+			spin_unlock(&ctr_lock);
+			if (strncmp(received_copy, "DONE", 4) == 0) {
+				done_invalidating = 1;
 			} else {
-				pr_info("waiting response %d\n", i);
-				i++;
-				msleep(1000);
+				pr_info("not a completion message, maybe handled later %d\n", i);
 			}
+		} else (completion_ret_val == 0) {
+			pr_info("timeout occured. retrying\n");
+			return -EAGAIN;
+		} else {
+			pr_info("interrupted\n");
+			return -EAGAIN;
 		}
+		
 	}
-	o.owner_pid = task->pid;
-	o.vm_start = vmf->address;
-	o.vm_end = vma->vm_end;
-	strscpy(o.ip_4_addr, "127.0.0.1", sizeof(o.ip_4_addr));
+	if (done_invalidating) {
+		o.owner_pid = task->pid;
+		o.vm_start = vmf->address;
+		o.vm_end = vma->vm_end;
+		strscpy(o.ip_4_addr, "127.0.0.1", sizeof(o.ip_4_addr));
 
-	unsigned long size = vma->vm_end - vma->vm_start;
-	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
-	pr_info("cxl: fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
+		unsigned long size = vma->vm_end - vma->vm_start;
+		long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
+		pr_info("cxl: fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
 
-	if (!dax_alive(cxl_dax_device))
-		run_dax(cxl_dax_device);
-	
-	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
-	if (nr_pages_avail < 0) return -ENXIO;
-	//pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
-	o.start = pf;
-	o.end.val = pf.val + nr_of_pages - 1;
-	ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-	if (ret < 0) return ret; 
-	*on_mem = o;
-	pr_info("Mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
-			o.end.val, vmf->pgoff);
-	
-	pr_info("Now owned by pid: %d on host: %s\n", on_mem->owner_pid, on_mem->ip_4_addr);
+		if (!dax_alive(cxl_dax_device))
+			run_dax(cxl_dax_device);
+		
+		nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
+		if (nr_pages_avail < 0) return -ENXIO;
+		//pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
+		o.start = pf;
+		o.end.val = pf.val + nr_of_pages - 1;
+		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
+		if (ret < 0) return ret; 
+		*on_mem = o;
+		pr_info("Mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
+				o.end.val, vmf->pgoff);
+		
+		pr_info("Now owned by pid: %d on host: %s\n", on_mem->owner_pid, on_mem->ip_4_addr);
+	} else {
+		pr_info("not yet impl\n");
+	}
 	return ret;
 }
 
