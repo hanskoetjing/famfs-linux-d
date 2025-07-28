@@ -34,11 +34,11 @@
 
 static struct task_struct *invalidator_thread;
 
-void invalidate_mem_area(void);
+int invalidate_mem_area(void *data);
 struct task_struct *get_task_from_int_pid(pid_t pid);
 int flush_mem_task(pid_t pid);
 
-void invalidate_mem_area(void *data) {
+int invalidate_mem_area(void *data) {
     int ret = 0;
     char received_copy[MAX_BUFFER_NET] = {0};
     unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
