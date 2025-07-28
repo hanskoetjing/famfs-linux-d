@@ -267,6 +267,7 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 }
 
 static int __init cxl_range_helper_init(void) {	
+	int ret = 0;
 	//init char device
 	alloc_chrdev_region(&dev_num, 0, 1, DEVICE_NAME);
 	cdev_init(&ffs_cdev, &fops);
@@ -277,7 +278,7 @@ static int __init cxl_range_helper_init(void) {
 	//init cxl
 	strscpy(device_path, "/dev/dax0.0", sizeof(device_path)); //default device, can be altered using ioctl
 	pr_info("using default path: %s\n", device_path);
-	get_cxl_device();
+	ret = get_cxl_device();
 	pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
 	memset(alloc_table_start, 0, sizeof(struct ownership));
 
@@ -287,7 +288,7 @@ static int __init cxl_range_helper_init(void) {
 
 	//init done
 	pr_info("cxlshm_mm: loaded\n");
-	return 0;
+	return ret;
 }
 
 static void __exit cxl_range_helper_exit(void) {
