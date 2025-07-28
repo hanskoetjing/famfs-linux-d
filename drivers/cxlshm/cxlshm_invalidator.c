@@ -94,12 +94,12 @@ int flush_mem_task(pid_t pid) {
 		pid_t pidd = get_owner_on_mem(&owner_on_mem);
         //temporary set to 0 since this func wont be called for now
 		unsigned long vm_from_mem = owner_on_mem->vm_start;
-		pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", 0, 0);
+		pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", owner_on_mem->owner_pid, owner_on_mem->vm_start);
 		int i = 0;
 		mas_for_each(&mas, vma, ULONG_MAX) {
-			pr_info("vma %d addr: 0x%lx\n", i, vma->vm_start);
 			if (vma->vm_start == vm_from_mem) {
-				this_vma = vma; 
+				this_vma = vma;
+                pr_info(THIS_MOD "found vma %d addr: 0x%lx\n", i, vma->vm_start);
 				flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
 				zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
 				break;
@@ -127,7 +127,7 @@ static int __init cxlshm_invalidator_init(void) {
 }
 
 static void __exit cxlshm_invalidator_exit(void) {
-    if (task_is_running(invalidator_thread) || invalidator_thread->__state == TASK_NORMAL) {
+    if (task_is_running(invalidator_thread)) {
         kthread_stop(invalidator_thread);
     }
 	//exit done
