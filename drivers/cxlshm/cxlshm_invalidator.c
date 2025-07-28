@@ -43,7 +43,7 @@ int invalidate_mem_area(void *data) {
     char received_copy[MAX_BUFFER_NET] = {0};
     unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
 
-    while(!kthread_should_stop() && counter < 5) {
+    while(!kthread_should_stop()) {
         long completion_ret_val = wait_for_completion_interruptible_timeout(&ownership_transfer_arrived, timeout);
         if (completion_ret_val > 0) {
             spin_lock(&ctr_lock);
