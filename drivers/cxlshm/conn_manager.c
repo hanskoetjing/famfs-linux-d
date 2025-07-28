@@ -132,22 +132,5 @@ void tcp_server_stop(void) {
 }
 EXPORT_SYMBOL(tcp_server_stop);
 
-static int __init connection_manager_init(void) {
-	int ret = 0;
-	//init tcp server
-	set_port(57580);
-	ret = tcp_server_start();
-
-	return ret;
-}
-
-static void __exit connection_manager_exit(void) {
-	//stopping tcp server
-	tcp_server_stop();
-
-}
-
-module_init(connection_manager_init);
-module_exit(connection_manager_exit);
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("conn mgr");
