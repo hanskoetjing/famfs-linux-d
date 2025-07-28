@@ -40,7 +40,8 @@ int flush_mem_task(pid_t pid);
 
 int invalidate_mem_area(void *data) {
     int ret = 0;
-    char received_copy[MAX_BUFFER_NET] = {0};
+    char *received_copy = kzalloc(MAX_BUFFER_NET * sizeof(char), GFP_NOWAIT); //using nowait as this is IO
+    memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
     unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
 
     while(!kthread_should_stop()) {
@@ -51,6 +52,8 @@ int invalidate_mem_area(void *data) {
             memset(ownership_transfer_message, 0, sizeof(ownership_transfer_message));
             spin_unlock(&ctr_lock);
             if (strncmp(received_copy, "PID:", 4) == 0) {
+                strsep(&received_copy, ":");
+                pr_info(THIS_MOD "pid received: %s\n", received_copy);
                 send_message("DONE");
             } else {
                 pr_info(THIS_MOD "not an ownership transfer message, maybe handled later\n");
