@@ -67,14 +67,14 @@ int flush_mem_task(pid_t pid) {
 	int ret = 0;
 	struct vm_area_struct *this_vma = NULL;
     struct task_struct *the_task;
-    struct ownership *owner_on_mem;
+    volatile struct ownership *owner_on_mem;
 	if (pid != -1) {
 		the_task = get_task_from_int_pid(pid);
 		struct mm_struct *mm = the_task->mm;
 		struct vm_area_struct *vma;
 		MA_STATE(mas, &mm->mm_mt, 0, 0);
 		get_cxl_device();
-		struct ownership *o = get_owner_on_mem(&owner_on_mem);
+		pid_t pidd = get_owner_on_mem(&owner_on_mem);
         //temporary set to 0 since this func wont be called for now
 		unsigned long vm_from_mem = 0;
 		pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", 0, 0);
