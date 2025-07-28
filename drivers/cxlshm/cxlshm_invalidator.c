@@ -42,7 +42,8 @@ int invalidate_mem_area(void *data) {
     int ret = 0;
     char received_copy[MAX_BUFFER_NET] = {0};
     unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
-    while(!kthread_should_stop()) {
+
+    while(!kthread_should_stop() && counter < 5) {
         long completion_ret_val = wait_for_completion_interruptible_timeout(&ownership_transfer_arrived, timeout);
         if (completion_ret_val > 0) {
             spin_lock(&ctr_lock);
@@ -54,9 +55,10 @@ int invalidate_mem_area(void *data) {
             } else {
                 pr_info(THIS_MOD "not an ownership transfer message, maybe handled later\n");
             }
+            counter = 0;
         } else if (completion_ret_val == 0) {
-            pr_info(THIS_MOD "timeout occured. retrying\n");
-            return -EAGAIN;
+            //pr_info(THIS_MOD "timeout occured. retrying\n");
+            //counter++;
         } else {
             pr_info(THIS_MOD "interrupted\n");
             return -EINTR;
