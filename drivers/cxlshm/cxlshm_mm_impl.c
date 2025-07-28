@@ -211,6 +211,7 @@ pid_t get_owner_on_mem(volatile struct ownership **owner_on_mem) {
 	}
 
 }
+EXPORT_SYMBOL(get_owner_on_mem);
 
 int is_owner(pid_t pid) {
 	int ret = 0;
@@ -221,6 +222,7 @@ int is_owner(pid_t pid) {
 	pr_info("owner on mem: %d, requestor pid: %d\n", owner_on_memory, pid);
 	return ret;
 }
+EXPORT_SYMBOL(is_owner);
 
 int get_cxl_device(void) {
 	int l = lookup_daxdev(device_path, &dax_dev_num);
@@ -245,6 +247,7 @@ int get_cxl_device(void) {
 	
 	return 0;
 }
+EXPORT_SYMBOL(get_cxl_device);
 
 static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg) {
 	struct cxl_dev_path_struct rw;

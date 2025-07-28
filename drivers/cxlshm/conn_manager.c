@@ -12,14 +12,19 @@
 #define THIS_MOD "Connection Manager: "
 
 DEFINE_SPINLOCK(ctr_lock);
+EXPORT_SYMBOL(ctr_lock);
 DECLARE_COMPLETION(is_complete);
+EXPORT_SYMBOL(is_complete);
 DECLARE_COMPLETION(ownership_transfer_arrived);
+EXPORT_SYMBOL(ownership_transfer_arrived);
 static struct socket *server_socket;
 static struct sockaddr_in sin;
 static struct task_struct *acceptor_thread;
 int open_port = DEFAULT_PORT;
 char message_received[MAX_BUFFER_NET] = {0};
+EXPORT_SYMBOL(message_received);
 char ownership_transfer_message[MAX_BUFFER_NET] = {0};
+EXPORT_SYMBOL(ownership_transfer_message);
 
 static int accept_connection(void *socket_in);
 int tcp_server_start(void);
