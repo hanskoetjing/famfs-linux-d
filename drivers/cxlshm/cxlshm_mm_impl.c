@@ -87,7 +87,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	if (owned == 0) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
 		pr_info("Not owned. Current owner: %d caller PID: %d Try to send message\n", get_owner_on_mem(), task->pid);
 		char pid_to_send[16] = {0};
-		snprintf(pid_to_send, 15, "%d", get_owner_on_mem());
+		snprintf(pid_to_send, 15, "PID:%d", get_owner_on_mem());
 		send_one_message(o.ip_4_addr, o.port, pid_to_send);
 		int i = 0;
 		char received_copy[MAX_BUFFER_NET] = {0};
