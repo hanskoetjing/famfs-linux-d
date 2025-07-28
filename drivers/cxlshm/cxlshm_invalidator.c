@@ -19,6 +19,10 @@
 #include <linux/jiffies.h>
 #include <linux/completion.h>
 #include <vdso/limits.h>
+#include <asm-generic/cacheflush.h>
+#include <linux/rcupdate.h>
+#include <linux/pid.h>
+#include <linux/pid_types.h>
 
 #include <linux/cxlshm_msg.h>
 #include "dax-private.h"
@@ -54,7 +58,7 @@ void invalidate_mem_area(void) {
 }
 
 struct task_struct *get_task_from_int_pid(pid_t pid) {
-	the_pid = find_get_pid(pid);
+	struct pid *the_pid = find_get_pid(pid);
 	return get_pid_task(the_pid, PIDTYPE_PID);
 }
 
