@@ -53,9 +53,10 @@ int invalidate_mem_area(void *data) {
             spin_unlock(&ctr_lock);
             if (strncmp(received_copy, "PID:", 4) == 0) {
                 strsep(&received_copy, ":");
-                pr_info(THIS_MOD "pid received: %s\n", received_copy);
+                
                 pid_t pid_received = 0;
-                kstrtoint(received_copy, 10, pid_received);
+                kstrtoint(received_copy, 10, &pid_received);
+                pr_info(THIS_MOD "pid received: %d\n", pid_received);
                 flush_mem_task(pid_received);
                 send_message("DONE");
             } else {
