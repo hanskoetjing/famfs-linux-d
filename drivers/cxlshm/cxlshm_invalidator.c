@@ -55,7 +55,6 @@ int invalidate_mem_area(void *data) {
             } else {
                 pr_info(THIS_MOD "not an ownership transfer message, maybe handled later\n");
             }
-            counter = 0;
         } else if (completion_ret_val == 0) {
             //pr_info(THIS_MOD "timeout occured. retrying\n");
             //counter++;
