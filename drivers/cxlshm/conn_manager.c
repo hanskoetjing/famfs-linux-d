@@ -82,7 +82,7 @@ static int accept_connection(void *socket_in) {
 					if (strncmp(message_received, "DONE", 4) == 0) ready = 1;
 					spin_unlock(&ctr_lock);
 					if (ready)
-						complete(is_complete);
+						complete(&is_complete);
 				} else if (len == 0) {
 					pr_info("Conn mgr: client closed connection.\n");
 					break;
