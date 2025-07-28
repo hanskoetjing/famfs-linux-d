@@ -33,6 +33,7 @@
 #define THIS_MOD "Mem Area Invalidator: "
 
 static struct task_struct *invalidator_thread;
+DECLARE_COMPLETION(ownership_transfer_arrived);
 
 int invalidate_mem_area(void *data);
 struct task_struct *get_task_from_int_pid(pid_t pid);
@@ -119,7 +120,8 @@ int flush_mem_task(pid_t pid) {
 }
 
 static int __init cxlshm_invalidator_init(void) {	
-    void *data;
+    void *data = NULL;
+    set_ownership_completion(&ownership_transfer_arrived);
     invalidator_thread = kthread_run(invalidate_mem_area, (void *)data, "invalidate_mem_area");
 	//init done
 	pr_info(THIS_MOD ": loaded\n");

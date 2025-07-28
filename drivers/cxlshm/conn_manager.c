@@ -15,8 +15,7 @@ DEFINE_SPINLOCK(ctr_lock);
 EXPORT_SYMBOL(ctr_lock);
 DECLARE_COMPLETION(is_complete);
 EXPORT_SYMBOL(is_complete);
-DECLARE_COMPLETION(ownership_transfer_arrived);
-EXPORT_SYMBOL(ownership_transfer_arrived);
+struct completion *ownership_transfer_arrived = NULL;
 static struct socket *server_socket;
 static struct sockaddr_in sin;
 static struct task_struct *acceptor_thread;
@@ -30,11 +29,19 @@ static int accept_connection(void *socket_in);
 int tcp_server_start(void);
 void tcp_server_stop(void);
 void set_port(int port_param);
+void set_ownership_completion(struct completion *param);
 
 void set_port(int port_param) {
     open_port = port_param;
 }
 EXPORT_SYMBOL(set_port);
+
+void set_ownership_completion(struct completion *param) {
+	spin_lock(&ctr_lock);
+	ownership_transfer_arrived = param;
+	spin_unlock(&ctr_lock);
+}
+EXPORT_SYMBOL(set_ownership_completion);
 
 int tcp_server_start(void) {
 	int ret = 0;
@@ -102,7 +109,7 @@ static int accept_connection(void *socket_in) {
 						complete(&is_complete);
 					} else if (ready == 2) {
 						pr_info(THIS_MOD "Invalidation request %s\n", ownership_transfer_message);
-						complete(&ownership_transfer_arrived);
+						complete(ownership_transfer_arrived);
 					}
 				} else if (len == 0) {
 					pr_info(THIS_MOD "client closed connection.\n");
