@@ -53,7 +53,7 @@ int invalidate_mem_area(void *data) {
             spin_unlock(&ctr_lock);
             if (strncmp(received_copy, "PID:", 4) == 0) {
                 strsep(&received_copy, ":");
-                
+
                 pid_t pid_received = 0;
                 kstrtoint(received_copy, 10, &pid_received);
                 pr_info(THIS_MOD "pid received: %d\n", pid_received);
@@ -128,6 +128,7 @@ static int __init cxlshm_invalidator_init(void) {
 
 static void __exit cxlshm_invalidator_exit(void) {
     if (task_is_running(invalidator_thread)) {
+        pr_info(THIS_MOD ": stop invalidator thread\n"); 
         kthread_stop(invalidator_thread);
     }
 	//exit done
