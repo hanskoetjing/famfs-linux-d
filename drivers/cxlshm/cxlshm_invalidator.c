@@ -56,10 +56,14 @@ int invalidate_mem_area(void *data) {
             }
         } else if (completion_ret_val == 0) {
             pr_info(THIS_MOD "timeout occured. retrying\n");
+            return -EAGAIN;
         } else {
             pr_info(THIS_MOD "interrupted\n");
+            return -EINTR;
         }
     }
+
+    return 0;
 }
 
 struct task_struct *get_task_from_int_pid(pid_t pid) {
