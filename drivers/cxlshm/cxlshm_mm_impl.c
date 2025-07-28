@@ -53,7 +53,7 @@ static int mmap_helper(struct file *filp, struct vm_area_struct *vma);
 static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 int get_cxl_device(void);
 int is_owner(pid_t pid);
-pid_t get_owner_on_mem(void);
+pid_t get_owner_on_mem(struct ownership **owner_on_mem);
 int read_allocation_table(void);
 int lookup_daxdev(const char *pathname, dev_t *devno);
 
@@ -75,6 +75,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	pgoff_t dax_pgoff; 
 	struct task_struct *task;
 	volatile struct ownership *on_mem = (volatile struct ownership *) alloc_table_start;
+	struct ownership *owner_on_mem;
 	
 	pr_info("Page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
@@ -84,9 +85,9 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	owned = is_owner(task->pid);
 
 	if (owned == 0) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
-		pr_info("Not owned. Current owner: %d caller PID: %d Try to send message\n", get_owner_on_mem(), task->pid);
+		pr_info("Not owned. Current owner: %d caller PID: %d Try to send message\n", get_owner_on_mem(&owner_on_mem), task->pid);
 		char pid_to_send[16] = {0};
-		snprintf(pid_to_send, 15, "PID:%d", get_owner_on_mem());
+		snprintf(pid_to_send, 15, "PID:%d", get_owner_on_mem(&owner_on_mem));
 		tcp_client_start(o.ip_4_addr, o.port);
 		send_message(pid_to_send);
 		int i = 0;
@@ -198,11 +199,11 @@ int read_allocation_table(void) {
 	return dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
 }
 
-pid_t get_owner_on_mem(void) {
+pid_t get_owner_on_mem(volatile struct ownership **owner_on_mem) {
 	int ret = 0;
 	ret = read_allocation_table();
 	if (ret < 0) return ret;
-	volatile struct ownership *owner_on_mem = (volatile struct ownership *)alloc_table_start;
+	*owner_on_mem = (volatile struct ownership *)alloc_table_start;
 	if (owner_on_mem && owner_on_mem->owner_pid > 0) {
 		return owner_on_mem->owner_pid;
 	} else {
@@ -213,7 +214,8 @@ pid_t get_owner_on_mem(void) {
 
 int is_owner(pid_t pid) {
 	int ret = 0;
-	pid_t owner_on_memory = get_owner_on_mem();
+	struct ownership *owner_on_mem;
+	pid_t owner_on_memory = get_owner_on_mem(&owner_on_mem);
 	if (owner_on_memory > 0 && owner_on_memory == pid) ret = 1;
 	else if (owner_on_memory < 0) ret = (int) owner_on_memory;
 	pr_info("owner on mem: %d, requestor pid: %d\n", owner_on_memory, pid);
@@ -222,6 +224,7 @@ int is_owner(pid_t pid) {
 
 int get_cxl_device(void) {
 	int l = lookup_daxdev(device_path, &dax_dev_num);
+	struct ownership *owner_on_mem;
 	if (!l) {
 		pr_info("dax dev num: %d\n", dax_dev_num);
 		cxl_dax_device = dax_dev_get(dax_dev_num);
@@ -231,7 +234,7 @@ int get_cxl_device(void) {
 			if (ret < 0) return ret;
 			end_pfn = begin_pfn;
 			end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
-			pr_info("Current owner on mem: %d\n", get_owner_on_mem());
+			pr_info("Current owner on mem: %d\n", get_owner_on_mem(&owner_on_mem));
 		} else {
 			pr_info("no cxl_dax_device\n");
 		}

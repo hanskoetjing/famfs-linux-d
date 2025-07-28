@@ -13,4 +13,8 @@ struct ownership { //TODO: add version to the struct...
 	unsigned long vm_end;
 };
 
+pid_t get_owner_on_mem(struct ownership **owner_on_mem);
+int is_owner(pid_t pid);
+int get_cxl_device(void);
+
 #endif
