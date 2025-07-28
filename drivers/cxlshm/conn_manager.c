@@ -91,10 +91,13 @@ static int accept_connection(void *socket_in) {
 						pr_info(THIS_MOD "unknown message received. Discarded\n");
 					}
 					spin_unlock(&ctr_lock);
-					if (ready == 1)
+					if (ready == 1) {
+						pr_info(THIS_MOD "Invalidation completion\n");
 						complete(&is_complete);
-					else if (ready == 2)
+					} else if (ready == 2) {
+						pr_info(THIS_MOD "Invalidation request %s\n", ownership_transfer_message);
 						complete(&ownership_transfer_arrived);
+					}
 				} else if (len == 0) {
 					pr_info(THIS_MOD "client closed connection.\n");
 					break;
@@ -129,5 +132,18 @@ void tcp_server_stop(void) {
 }
 EXPORT_SYMBOL(tcp_server_stop);
 
+static int __init connection_manager_init(void) {
+	//init tcp server
+	set_port(57580);
+	tcp_server_start();
+}
+
+static int __exit connection_manager_exit(void) {
+	//stopping tcp server
+	tcp_server_stop();
+}
+
+module_init(connection_manager_init);
+module_exit(connection_manager_exit);
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("conn mgr");
