@@ -94,7 +94,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	pr_info("owner: %d\n", owned);
 	int done_invalidating = 0;
 
-	if (!owned) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
+	if (owned > 0) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
 		pr_info("Not owned. Current owner: %d caller PID: %d Try to send message\n", get_owner_on_mem(), task->pid);
 		char pid_to_send[16] = {0};
 		snprintf(pid_to_send, 15, "%d", get_owner_on_mem());
@@ -120,8 +120,8 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 			pr_info("interrupted\n");
 			return -EAGAIN;
 		}
-	} else {
-		//temporary fix owned to 1
+	} else if (owned < 0) {
+		//the owner info is null
 		owned = 1;
 	}
 	if (owned) {
