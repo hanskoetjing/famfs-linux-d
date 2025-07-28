@@ -87,14 +87,14 @@ static int accept_connection(void *socket_in) {
 					} else if (strncmp(buf, "PID:", 4) == 0) {
 						strscpy(ownership_transfer_message, buf, sizeof(buf));
 						ready = 2;
+					} else {
+						pr_info(THIS_MOD "unknown message received. Discarded\n");
 					}
 					spin_unlock(&ctr_lock);
 					if (ready == 1)
 						complete(&is_complete);
 					else if (ready == 2)
 						complete(&ownership_transfer_arrived);
-					else
-
 				} else if (len == 0) {
 					pr_info(THIS_MOD "client closed connection.\n");
 					break;
