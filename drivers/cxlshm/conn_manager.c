@@ -34,6 +34,7 @@ void set_port(int port_param);
 void set_port(int port_param) {
     open_port = port_param;
 }
+EXPORT_SYMBOL(set_port);
 
 int tcp_server_start(void) {
 	int ret = 0;
