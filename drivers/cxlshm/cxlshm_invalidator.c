@@ -28,6 +28,7 @@
 #define THIS_MOD "Mem Area Invalidator: "
 
 void invalidate_mem_area(void);
+struct task_struct *get_task_from_int_pid(pid_t pid);
 int flush_mem_task(pid_t pid);
 
 void invalidate_mem_area(void) {
@@ -47,13 +48,16 @@ void invalidate_mem_area(void) {
         }
     } else if (completion_ret_val == 0) {
         pr_info(THIS_MOD "timeout occured. retrying\n");
-        return -EAGAIN;
     } else {
         pr_info(THIS_MOD "interrupted\n");
-        return -EAGAIN;
     }
-    return ret;
 }
+
+struct task_struct *get_task_from_int_pid(pid_t pid) {
+	the_pid = find_get_pid(pid);
+	return get_pid_task(the_pid, PIDTYPE_PID);
+}
+
 
 int flush_mem_task(pid_t pid) {
 	int ret = 0;
@@ -64,10 +68,11 @@ int flush_mem_task(pid_t pid) {
 		struct mm_struct *mm = the_task->mm;
 		struct vm_area_struct *vma;
 		MA_STATE(mas, &mm->mm_mt, 0, 0);
-		get_cxl_device();
-		struct ownership *o = get_owner_on_mem();
-		unsigned long vm_from_mem = o->vm_start;
-		pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", o->owner_pid, o->vm_start);
+		//get_cxl_device();
+		//struct ownership *o = get_owner_on_mem();
+        //temporary set to 0 since this func wont be called for now
+		unsigned long vm_from_mem = 0;
+		pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", 0, 0);
 		int i = 0;
 		mas_for_each(&mas, vma, ULONG_MAX) {
 			pr_info("vma %d addr: 0x%lx\n", i, vma->vm_start);
