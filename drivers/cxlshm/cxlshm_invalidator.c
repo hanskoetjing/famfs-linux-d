@@ -23,6 +23,7 @@
 #include <linux/rcupdate.h>
 #include <linux/pid.h>
 #include <linux/pid_types.h>
+#include <linux/kthread.h>
 
 #include <linux/cxlshm_msg.h>
 #include "dax-private.h"
@@ -31,29 +32,33 @@
 
 #define THIS_MOD "Mem Area Invalidator: "
 
+static struct task_struct *invalidator_thread;
+
 void invalidate_mem_area(void);
 struct task_struct *get_task_from_int_pid(pid_t pid);
 int flush_mem_task(pid_t pid);
 
-void invalidate_mem_area(void) {
+void invalidate_mem_area(void *data) {
     int ret = 0;
     char received_copy[MAX_BUFFER_NET] = {0};
     unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
-    long completion_ret_val = wait_for_completion_interruptible_timeout(&ownership_transfer_arrived, timeout);
-    if (completion_ret_val > 0) {
-        spin_lock(&ctr_lock);
-        strscpy(received_copy, ownership_transfer_message, sizeof(received_copy));
-        memset(ownership_transfer_message, 0, sizeof(ownership_transfer_message));
-        spin_unlock(&ctr_lock);
-        if (strncmp(received_copy, "PID:", 4) == 0) {
-            send_message("DONE");
+    while(!kthread_should_stop()) {
+        long completion_ret_val = wait_for_completion_interruptible_timeout(&ownership_transfer_arrived, timeout);
+        if (completion_ret_val > 0) {
+            spin_lock(&ctr_lock);
+            strscpy(received_copy, ownership_transfer_message, sizeof(received_copy));
+            memset(ownership_transfer_message, 0, sizeof(ownership_transfer_message));
+            spin_unlock(&ctr_lock);
+            if (strncmp(received_copy, "PID:", 4) == 0) {
+                send_message("DONE");
+            } else {
+                pr_info(THIS_MOD "not an ownership transfer message, maybe handled later\n");
+            }
+        } else if (completion_ret_val == 0) {
+            pr_info(THIS_MOD "timeout occured. retrying\n");
         } else {
-            pr_info(THIS_MOD "not an ownership transfer message, maybe handled later\n");
+            pr_info(THIS_MOD "interrupted\n");
         }
-    } else if (completion_ret_val == 0) {
-        pr_info(THIS_MOD "timeout occured. retrying\n");
-    } else {
-        pr_info(THIS_MOD "interrupted\n");
     }
 }
 
@@ -102,13 +107,17 @@ int flush_mem_task(pid_t pid) {
 }
 
 static int __init cxlshm_invalidator_init(void) {	
-    invalidate_mem_area();
+    void *data;
+    invalidator_thread = kthread_run(invalidate_mem_area, (void *)data, "invalidate_mem_area");
 	//init done
 	pr_info(THIS_MOD ": loaded\n");
 	return 0;
 }
 
 static void __exit cxlshm_invalidator_exit(void) {
+    if (task_is_running(invalidator_thread) || invalidator_thread->__state == TASK_NORMAL) {
+        kthread_stop(invalidator_thread);
+    }
 	//exit done
 	pr_info(THIS_MOD ": unloaded\n"); 
 }
