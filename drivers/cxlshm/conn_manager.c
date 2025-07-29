@@ -80,17 +80,17 @@ static int accept_connection(void *socket_in) {
 		kernel_accept(srv_socket, &new_socket, 0);
 		if (new_socket) {
 			struct sockaddr_in connected_client_addr;
+			struct msghdr hdr;
+			memset(&hdr, 0, sizeof(hdr));
+			struct kvec iov = {
+				.iov_base = buf,
+				.iov_len = sizeof(buf) - 1
+			};
 			kernel_getpeername(new_socket, (struct sockaddr *)&connected_client_addr);
 			pr_info(THIS_MOD "connected! client: %pI4\n", &connected_client_addr.sin_addr);
 			int len = -1;
 			client_socket = new_socket;
 			for(;;) {
-				struct msghdr hdr;
-				memset(&hdr, 0, sizeof(hdr));
-				struct kvec iov = {
-					.iov_base = buf,
-					.iov_len = sizeof(buf) - 1
-				};
 				len = kernel_recvmsg(new_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
 				if (len > 0) {
 					int ready = 0;
