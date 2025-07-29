@@ -75,7 +75,8 @@ int invalidate_mem_area(void *data) {
 
 struct task_struct *get_task_from_int_pid(pid_t pid) {
 	struct pid *the_pid = find_get_pid(pid);
-	return get_pid_task(the_pid, PIDTYPE_PID);
+	if (the_pid != NULL)
+        return get_pid_task(the_pid, PIDTYPE_PID);
 }
 
 
