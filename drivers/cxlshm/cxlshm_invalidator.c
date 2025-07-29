@@ -77,6 +77,8 @@ struct task_struct *get_task_from_int_pid(pid_t pid) {
 	struct pid *the_pid = find_get_pid(pid);
 	if (the_pid != NULL)
         return get_pid_task(the_pid, PIDTYPE_PID);
+    else 
+        return NULL;
 }
 
 
