@@ -278,10 +278,7 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 			if (ret >= 0) {
 				strscpy(ip_4_addr, ip_4_addr_from_user, sizeof(ip_4_addr));
 				open_port = port_from_user;
-			} else {
-				pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", received_copy, ret);
-			}
-
+			} 
 			//restart tcp server
 			tcp_server_stop();
 			set_port(open_port);
