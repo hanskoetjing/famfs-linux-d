@@ -203,7 +203,6 @@ EXPORT_SYMBOL(tcp_client_start_d);
 static int wait_for_response(void *socket_in) {
 	int ret_val = 0;
 	struct socket *clnt_socket = (struct socket *)socket_in;
-	struct socket *new_socket;
 	char buf[MAX_BUFFER_NET] = {0};
 	pr_info(THIS_MOD "waiting for response\n");
 	while(!kthread_should_stop()) {
