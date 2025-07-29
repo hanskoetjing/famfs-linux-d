@@ -43,8 +43,6 @@ int invalidate_mem_area(void *data) {
     int ret = 0;
     char *received_copy = kzalloc(MAX_BUFFER_NET * sizeof(char), GFP_NOWAIT); //using nowait as this is IO
     memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
-    unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
-    int i = 0;
     while(!kthread_should_stop()) {
         long completion_ret_val = wait_for_completion_interruptible(&ownership_transfer_arrived);
         if (completion_ret_val >= 0) {
@@ -54,11 +52,14 @@ int invalidate_mem_area(void *data) {
             spin_unlock(&ctr_lock);
             if (strncmp(received_copy, "PID:", 4) == 0) {
                 strsep(&received_copy, ":");
-
                 pid_t pid_received = 0;
-                kstrtoint(received_copy, 10, &pid_received);
-                pr_info(THIS_MOD "pid received: %d\n", pid_received);
-                flush_mem_task(pid_received);
+                int ret = kstrtoint(received_copy, 10, &pid_received);
+                if (ret >= 0) {
+                    pr_info(THIS_MOD "pid received: %d\n", pid_received);
+                    flush_mem_task(pid_received);
+                } else {
+                    pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", received_copy, ret);
+                }
                 send_message("DONE");
             } else {
                 pr_info(THIS_MOD "not an ownership transfer message, maybe handled later\n");
@@ -91,7 +92,6 @@ int flush_mem_task(pid_t pid) {
             struct vm_area_struct *vma;
             MA_STATE(mas, &mm->mm_mt, 0, 0);
             get_cxl_device();
-            pid_t pidd = get_owner_on_mem(&owner_on_mem);
             //temporary set to 0 since this func wont be called for now
             unsigned long vm_from_mem = owner_on_mem->vm_start;
             pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", owner_on_mem->owner_pid, owner_on_mem->vm_start);
