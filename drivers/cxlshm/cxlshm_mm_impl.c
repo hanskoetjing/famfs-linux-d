@@ -24,6 +24,7 @@
 #include "conn_manager.h"
 #include "cxlshm-private.h"
 
+#define THIS_MOD				"cxlshm_mm: "
 #define DEVICE_NAME             "cxl_mmap"
 #define CLASS_NAME              "cxl_mmap_class"
 #define FILE_PATH_LENGTH        32
@@ -32,7 +33,7 @@
 
 #define IOCTL_MAGIC             0xCC
 #define IOCTL_SET_FILE_PATH     _IOW(IOCTL_MAGIC, 0x01, struct cxl_dev_path_struct)
-#define IOCTL_FLUSH_CACHE     	_IOR(IOCTL_MAGIC, 0x02, struct cxl_dev_path_struct)
+#define IOCTL_SET_SRV_ADDR     	_IOW(IOCTL_MAGIC, 0x02, struct cxl_dev_path_struct)
 
 struct cxl_dev_path_struct {
 	char path[FILE_PATH_LENGTH];
@@ -47,7 +48,6 @@ static pfn_t begin_pfn, end_pfn;
 static struct vm_area_struct *this_vma;
 static void *alloc_table_start;
 static struct ownership o;
-int dest_port = 57580;
 int open_port = 57580;
 char ip_4_addr[16] = {0};
 
@@ -123,7 +123,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		o.vm_start = vmf->address;
 		o.vm_end = vma->vm_end;
 		strscpy(o.ip_4_addr, ip_4_addr, sizeof(o.ip_4_addr));
-		o.port = dest_port;
+		o.port = open_port;
 
 		unsigned long size = vma->vm_end - vma->vm_start;
 		long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
@@ -257,16 +257,35 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 	if (copy_from_user(&rw, (void __user *)arg, sizeof(rw)))
 		return -EFAULT;
 
-	pr_info("Path: %s\n", rw.path);
+	pr_info(THIS_MOD "data from userspace: %s\n", rw.path);
 
 	switch (cmd) {
 		case IOCTL_SET_FILE_PATH:
 			int path_length = strscpy(device_path, rw.path, FILE_PATH_LENGTH);
-			pr_info("%d char copied to file_path. File path: %s\n", path_length, device_path);
+			pr_info(THIS_MOD "%d char copied to file_path. File path: %s\n", path_length, device_path);
 			get_cxl_device();
 			break;
-		case IOCTL_FLUSH_CACHE: //as ioctl (temporary manual invoke)
-			pr_info("this ioctl done nothing now. page invalidation done by message\n");
+		case IOCTL_SET_SRV_ADDR: //as ioctl 
+			if (!strchr(rw.path, ':')) 
+				return -EINVAL;
+			int strlen = strlen(rw.path);
+			char *temporary_data = kzalloc((sizeof(char) * strlen) + 1, GFP_KERNEL);
+			memset(temporary_data, 0, (sizeof(char) * strlen) + 1);
+			int len_copied = strscpy(temporary_data, rw.path, strlen);
+			char *ip_4_addr_from_user = strsep(&temporary_data, ":");
+			int port_from_user = 0;
+			int ret = kstrtoint(temporary_data, 10, &port_from_user);
+			if (ret >= 0) {
+				strscpy(ip_4_addr, ip_4_addr_from_user, sizeof(ip_4_addr));
+				open_port = port_from_user;
+			} else {
+				pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", received_copy, ret);
+			}
+
+			//restart tcp server
+			tcp_server_stop();
+			set_port(open_port);
+			tcp_server_start();
 			break;
 		default:
 			return -ENOTTY;
@@ -286,9 +305,9 @@ static int __init cxl_range_helper_init(void) {
 
 	//init cxl
 	strscpy(device_path, "/dev/dax0.0", sizeof(device_path)); //default device, can be altered using ioctl
-	pr_info("using default path: %s\n", device_path);
+	pr_info(THIS_MOD "using default path: %s\n", device_path);
 	ret = get_cxl_device();
-	pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
+	pr_info(THIS_MOD "initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
 	memset(alloc_table_start, 0, sizeof(struct ownership));
 
 	//set default ip addr to localhost
@@ -299,7 +318,7 @@ static int __init cxl_range_helper_init(void) {
 	ret = tcp_server_start();
 
 	//init done
-	pr_info("cxlshm_mm: loaded\n");
+	pr_info(THIS_MOD "loaded\n");
 	return ret;
 }
 
@@ -314,7 +333,7 @@ static void __exit cxl_range_helper_exit(void) {
 	tcp_server_stop();
 
 	//exit done
-	pr_info("cxlshm_mm: unloaded\n"); 
+	pr_info(THIS_MOD "unloaded\n"); 
 }
 
 
