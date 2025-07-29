@@ -111,7 +111,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 			if (strncmp(received_copy, "DONE", 4) == 0) {
 				owned = 1;
 			} else {
-				pr_info(THIS_MOD "not a completion message, maybe handled later %d\n");
+				pr_info(THIS_MOD "not a completion message, maybe handled later\n");
 				return -EINVAL;
 			}
 			tcp_client_stop_d();
