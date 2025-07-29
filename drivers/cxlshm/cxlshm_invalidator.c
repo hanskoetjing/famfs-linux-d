@@ -81,35 +81,41 @@ struct task_struct *get_task_from_int_pid(pid_t pid) {
 int flush_mem_task(pid_t pid) {
 	int ret = 0;
 	struct vm_area_struct *this_vma = NULL;
-    struct task_struct *the_task;
+    struct task_struct *the_task = NULL;
     volatile struct ownership *owner_on_mem;
 	if (pid != -1) {
+        pr_info(THIS_MOD "start flushing vma for pid: %d\n", pid);
 		the_task = get_task_from_int_pid(pid);
-		struct mm_struct *mm = the_task->mm;
-		struct vm_area_struct *vma;
-		MA_STATE(mas, &mm->mm_mt, 0, 0);
-		get_cxl_device();
-		pid_t pidd = get_owner_on_mem(&owner_on_mem);
-        //temporary set to 0 since this func wont be called for now
-		unsigned long vm_from_mem = owner_on_mem->vm_start;
-		pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", owner_on_mem->owner_pid, owner_on_mem->vm_start);
-		int i = 0;
-		mas_for_each(&mas, vma, ULONG_MAX) {
-			if (vma->vm_start == vm_from_mem) {
-				this_vma = vma;
-                pr_info(THIS_MOD "found vma %d addr: 0x%lx\n", i, vma->vm_start);
-				flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
-				zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
-				break;
-			}
-			i++;
-		}
-		if (this_vma) {
-			pr_info(THIS_MOD "Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
-		} else {
-			pr_info(THIS_MOD "VMA not found\n");
-		}
-		//send_one_message(dest_ip_4_addr, dest_port, "DONE");
+		if (the_task != NULL) {
+            struct mm_struct *mm = the_task->mm;
+            struct vm_area_struct *vma;
+            MA_STATE(mas, &mm->mm_mt, 0, 0);
+            get_cxl_device();
+            pid_t pidd = get_owner_on_mem(&owner_on_mem);
+            //temporary set to 0 since this func wont be called for now
+            unsigned long vm_from_mem = owner_on_mem->vm_start;
+            pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", owner_on_mem->owner_pid, owner_on_mem->vm_start);
+            int i = 0;
+            mas_for_each(&mas, vma, ULONG_MAX) {
+                if (vma->vm_start == vm_from_mem) {
+                    this_vma = vma;
+                    pr_info(THIS_MOD "found vma %d addr: 0x%lx\n", i, vma->vm_start);
+                    flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
+                    zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
+                    break;
+                }
+                i++;
+            }
+            if (this_vma) {
+                pr_info(THIS_MOD "Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
+            } else {
+                pr_info(THIS_MOD "VMA not found\n");
+                ret = -1;
+            }
+        } else {
+            pr_info(THIS_MOD "task not found\n");
+            ret = -1;
+        }
 	} else {
 		ret = -1;
 	}
