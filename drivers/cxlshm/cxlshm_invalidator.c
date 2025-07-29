@@ -70,7 +70,7 @@ int invalidate_mem_area(void *data) {
         }
     }
     pr_info(THIS_MOD "thread returns\n");
-    return 0;
+    return ret;
 }
 
 struct task_struct *get_task_from_int_pid(pid_t pid) {
