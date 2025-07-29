@@ -91,7 +91,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 			get_owner_on_mem(&owner_on_mem), task->pid, owner_on_mem->ip_4_addr, owner_on_mem->port);
 		char pid_to_send[16] = {0};
 		snprintf(pid_to_send, 15, "PID:%d", get_owner_on_mem(&owner_on_mem));
-		tcp_client_start(owner_on_mem->ip_4_addr, owner_on_mem->port);
+		tcp_client_start((char *)owner_on_mem->ip_4_addr, owner_on_mem->port);
 		send_message(pid_to_send);
 		int i = 0;
 		char received_copy[MAX_BUFFER_NET] = {0};
@@ -272,7 +272,7 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 			int strlen = strlen(rw.path);
 			char *temporary_data = kzalloc(sizeof(char) * (strlen + 1), GFP_KERNEL);
 			memset(temporary_data, 0, sizeof(char) * (strlen + 1));
-			int len_copied = strscpy(temporary_data, rw.path, strlen + 1);
+			strscpy(temporary_data, rw.path, strlen + 1);
 			char *ip_4_addr_from_user = strsep(&temporary_data, ":");
 			int port_from_user = 0;
 			int ret = kstrtoint(temporary_data, 10, &port_from_user);
