@@ -48,6 +48,8 @@ static struct vm_area_struct *this_vma;
 static void *alloc_table_start;
 static struct ownership o;
 int dest_port = 57580;
+int open_port = 57580;
+char ip_4_addr[16] = {0};
 
 static int mmap_helper(struct file *filp, struct vm_area_struct *vma);
 static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
@@ -120,8 +122,8 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		o.owner_pid = task->pid;
 		o.vm_start = vmf->address;
 		o.vm_end = vma->vm_end;
-		strscpy(o.ip_4_addr, "127.0.0.1", sizeof(o.ip_4_addr));
-		o.port = 57580;
+		strscpy(o.ip_4_addr, ip_4_addr, sizeof(o.ip_4_addr));
+		o.port = dest_port;
 
 		unsigned long size = vma->vm_end - vma->vm_start;
 		long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
@@ -289,8 +291,11 @@ static int __init cxl_range_helper_init(void) {
 	pr_info("Initialise allocation table at 0x%llx to 0x%llx \n", begin_pfn.val, end_pfn.val);
 	memset(alloc_table_start, 0, sizeof(struct ownership));
 
+	//set default ip addr to localhost
+	strscpy(ip_4_addr, "127.0.0.1", sizeof("127.0.0.1"));
+
 	//init tcp server
-	set_port(57580);
+	set_port(open_port);
 	ret = tcp_server_start();
 
 	//init done

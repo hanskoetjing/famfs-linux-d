@@ -1,26 +1,14 @@
 #include <linux/module.h>
 #include <linux/init.h>
-#include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/device.h>
-#include <linux/uaccess.h>
-#include <linux/io.h>
 #include <linux/mm.h>
 #include <linux/string.h>
 #include <linux/types.h>
-#include <linux/namei.h>
-#include <linux/path.h>
-#include <linux/dax.h>
 #include <linux/ioport.h>
-#include <asm-generic/cacheflush.h>
 #include <linux/rcupdate.h>
 #include <linux/sprintf.h>
-#include <linux/delay.h>
-#include <linux/jiffies.h>
 #include <linux/completion.h>
 #include <vdso/limits.h>
 #include <asm-generic/cacheflush.h>
-#include <linux/rcupdate.h>
 #include <linux/pid.h>
 #include <linux/pid_types.h>
 #include <linux/kthread.h>
@@ -55,14 +43,11 @@ int invalidate_mem_area(void *data) {
                 pid_t pid_received = 0;
                 int ret = kstrtoint(received_copy, 10, &pid_received);
                 if (ret >= 0) {
-                    pr_info(THIS_MOD "pid received: %d\n", pid_received);
                     flush_mem_task(pid_received);
                 } else {
                     pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", received_copy, ret);
                 }
                 send_message("DONE");
-            } else {
-                pr_info(THIS_MOD "not an ownership transfer message, maybe handled later\n");
             }
         } else {
             pr_info(THIS_MOD "interrupted\n");
@@ -88,7 +73,6 @@ int flush_mem_task(pid_t pid) {
     struct task_struct *the_task = NULL;
     volatile struct ownership *owner_on_mem;
 	if (pid != -1) {
-        pr_info(THIS_MOD "start flushing vma for pid: %d\n", pid);
 		the_task = get_task_from_int_pid(pid);
 		if (the_task != NULL) {
             struct mm_struct *mm = the_task->mm;
@@ -99,7 +83,6 @@ int flush_mem_task(pid_t pid) {
             pid_t pid_on_mem = get_owner_on_mem(&owner_on_mem);
             unsigned long vm_from_mem = owner_on_mem->vm_start;
             pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", pid_on_mem, owner_on_mem->vm_start);
-            int i = 0;
             mas_for_each(&mas, vma, ULONG_MAX) {
                 if (vma->vm_start == vm_from_mem) {
                     this_vma = vma;
@@ -108,7 +91,6 @@ int flush_mem_task(pid_t pid) {
                     zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
                     break;
                 }
-                i++;
             }
             if (this_vma) {
                 pr_info(THIS_MOD "Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
@@ -131,14 +113,14 @@ static int __init cxlshm_invalidator_init(void) {
     set_ownership_completion(&ownership_transfer_arrived);
     invalidator_thread = kthread_run(invalidate_mem_area, (void *)data, "invalidate_mem_area");
 	//init done
-	pr_info(THIS_MOD ": loaded\n");
+	pr_info(THIS_MOD "loaded\n");
 	return 0;
 }
 
 static void __exit cxlshm_invalidator_exit(void) {
     set_ownership_completion(NULL);
     if (task_is_running(invalidator_thread)) {
-        pr_info(THIS_MOD ": stop invalidator thread\n"); 
+        pr_info(THIS_MOD "stop invalidator thread\n"); 
         kthread_stop(invalidator_thread);
     }
 	//exit done
