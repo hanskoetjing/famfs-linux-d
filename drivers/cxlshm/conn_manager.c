@@ -117,10 +117,10 @@ static int accept_connection(void *socket_in) {
 					break;
 				} else if (len == -EAGAIN) {
 					msleep(10);
-					int accept_connection(void *socket_in);
+					//int accept_connection(void *socket_in);
 				} else {
 					ret_val = len;
-					break;
+					//break;
 				}
 				//overwrite buf data with NULL char
 				memset(buf, 0, sizeof(buf));			

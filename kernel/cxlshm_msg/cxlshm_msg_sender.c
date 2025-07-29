@@ -73,6 +73,8 @@ int send_message(char *message) {
 			.iov_len = sizeof(msg)
 		};
 		ret = kernel_sendmsg(client_socket, &hdr, &iov, 1, strlen(msg));
+	} else {
+		pr_info("client socket is not available");
 	}
 	return ret;
 }

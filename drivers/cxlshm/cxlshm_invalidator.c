@@ -47,7 +47,8 @@ int invalidate_mem_area(void *data) {
                 } else {
                     pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", received_copy, ret);
                 }
-                send_message("DONE");
+                ret = send_message("DONE");
+                pr_info(THIS_MOD "bytes send %d\n", ret);
             }
         } else {
             pr_info(THIS_MOD "interrupted\n");

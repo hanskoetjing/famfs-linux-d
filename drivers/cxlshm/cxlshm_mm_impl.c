@@ -208,7 +208,7 @@ pid_t get_owner_on_mem(volatile struct ownership **owner_on_mem) {
 	if (ret < 0) return ret;
 	*owner_on_mem = (volatile struct ownership *)alloc_table_start;
 	if (*owner_on_mem && (*owner_on_mem)->owner_pid > 0) {
-		return (*owner_on_mem)->owner_pid;
+		return (pid_t) ((*owner_on_mem)->owner_pid);
 	} else {
 		return -ENXIO;
 	}
@@ -220,9 +220,11 @@ int is_owner(pid_t pid) {
 	int ret = 0;
 	volatile struct ownership *owner_on_mem;
 	pid_t owner_on_memory = get_owner_on_mem(&owner_on_mem);
-	if (owner_on_memory > 0 && owner_on_memory == pid) ret = 1;
-	else if (owner_on_memory < 0) ret = owner_on_memory;
-	pr_info("owner on mem: %d, requestor pid: %d\n", ret, pid);
+	if (owner_on_memory > 0 && owner_on_memory == pid) 
+		ret = 1;
+	else
+		ret = owner_on_memory;
+	pr_info("owner on mem: %d, requestor pid: %d\n", owner_on_memory->owner_pid, pid);
 	return ret;
 }
 EXPORT_SYMBOL(is_owner);
