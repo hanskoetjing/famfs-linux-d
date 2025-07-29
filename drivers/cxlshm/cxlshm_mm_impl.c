@@ -91,7 +91,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	else if (owner_on_memory < 0)
 		owned = 1;
 
-	if (owned) {
+	if (!owned) {
 		pr_info(THIS_MOD "not owned. Current owner: %d caller PID: %d Try to send message to %s:%d\n", 
 			owner_on_memory, task->pid, owner_on_mem->ip_4_addr, owner_on_mem->port);
 		char pid_to_send[16] = {0};
