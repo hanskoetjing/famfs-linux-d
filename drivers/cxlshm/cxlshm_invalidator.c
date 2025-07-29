@@ -49,6 +49,7 @@ int invalidate_mem_area(void *data) {
                 }
                 ret = send_response("DONE");
                 pr_info(THIS_MOD "bytes send %d\n", ret);
+                reinit_completion(ownership_transfer_arrived);
             }
         } else {
             pr_info(THIS_MOD "interrupted\n");

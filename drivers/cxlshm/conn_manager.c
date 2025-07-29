@@ -16,9 +16,9 @@ EXPORT_SYMBOL(ctr_lock);
 DECLARE_COMPLETION(is_complete);
 EXPORT_SYMBOL(is_complete);
 struct completion *ownership_transfer_arrived = NULL;
-static struct socket *server_socket, *client_socket;
-static struct sockaddr_in sin;
-static struct task_struct *acceptor_thread;
+static struct socket *server_socket, *connected_client_socket, *client_socket;
+static struct sockaddr_in sin, client_sockaddr;
+static struct task_struct *acceptor_thread, *response_acceptor_thread;
 int open_port = DEFAULT_PORT;
 char message_received[MAX_BUFFER_NET] = {0};
 EXPORT_SYMBOL(message_received);
@@ -89,7 +89,7 @@ static int accept_connection(void *socket_in) {
 			kernel_getpeername(new_socket, (struct sockaddr *)&connected_client_addr);
 			pr_info(THIS_MOD "connected! client: %pI4\n", &connected_client_addr.sin_addr);
 			int len = -1;
-			client_socket = new_socket;
+			connected_client_socket = new_socket;
 			for(;;) {
 				len = kernel_recvmsg(new_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
 				if (len > 0) {
@@ -122,7 +122,7 @@ static int accept_connection(void *socket_in) {
 					msleep(10);
 					//accept_connection(socket_in);
 				} else {
-					pr_info(THIS_MOD "kernel_accept returned %d\n", len);
+					pr_info(THIS_MOD "kernel_recvmsg returned %d\n", len);
 					ret_val = len;
 					break;
 				}
@@ -131,7 +131,7 @@ static int accept_connection(void *socket_in) {
 			}
 			sock_release(new_socket);
 			new_socket = NULL;
-			client_socket = NULL;
+			connected_client_socket = NULL;
 			pr_info(THIS_MOD "done receiving data\n");
 		}
 	}
@@ -144,14 +144,14 @@ int send_response(char *response_message) {
 	int len = strscpy(msg, response_message, sizeof(msg));
 	pr_info(THIS_MOD "sending response %s length %d\n", msg, len);
 	int ret = 0;
-	if (client_socket) {
+	if (connected_client_socket) {
 		struct msghdr hdr;
 		memset(&hdr, 0, sizeof(hdr));
 		struct kvec iov = {
 			.iov_base = response_message,
 			.iov_len = sizeof(msg)
 		};
-		ret = kernel_sendmsg(client_socket, &hdr, &iov, 1, strlen(msg));
+		ret = kernel_sendmsg(connected_client_socket, &hdr, &iov, 1, strlen(msg));
 		pr_info(THIS_MOD "sent response %d bytes\n", ret);
 	} else {
 		pr_info(THIS_MOD "connected client socket is not available\n");
@@ -172,6 +172,122 @@ void tcp_server_stop(void) {
 	}
 }
 EXPORT_SYMBOL(tcp_server_stop);
+
+//client. move to here for easy recompiling
+int tcp_client_start_d(char *ip_4_addr, int port) {
+	int ret = 0;
+
+	if (!client_socket) {
+		ret = sock_create_kern(&init_net, AF_INET, SOCK_STREAM, IPPROTO_TCP, &client_socket);
+		if (ret < 0) return ret;
+		memset(&client_sockaddr, 0, sizeof(client_sockaddr));
+		//initialise client socket address
+		client_sockaddr.sin_family = AF_INET;
+		client_sockaddr.sin_port = htons(port);
+		int ret_ip = in4_pton(ip_4_addr, INET_ADDRSTRLEN, (u8 *)&client_sockaddr.sin_addr.s_addr, -1, NULL);
+		if (ret_ip == 0) return -EINVAL;
+		ret = client_socket->ops->connect(client_socket, (struct sockaddr *)&client_sockaddr, sizeof(client_sockaddr), 0);
+		if (ret < 0) return ret;
+	} else {
+		pr_info(THIS_MOD "there is a client socket\n");
+		ret = -1;
+	}
+	return ret;
+}
+EXPORT_SYMBOL(tcp_client_start_d);
+
+static int wait_for_response(void *socket_in) {
+	int ret_val = 0;
+	struct socket *clnt_socket = (struct socket *)socket_in;
+	struct socket *new_socket;
+	char buf[MAX_BUFFER_NET] = {0};
+	pr_info(THIS_MOD "waiting for response\n");
+	while(!kthread_should_stop()) {
+		if (clnt_socket) {
+			struct sockaddr_in connected_server_addr;
+			struct msghdr hdr;
+			memset(&hdr, 0, sizeof(hdr));
+			struct kvec iov = {
+				.iov_base = buf,
+				.iov_len = sizeof(buf) - 1
+			};
+			kernel_getpeername(clnt_socket, (struct sockaddr *)&connected_server_addr);
+			pr_info(THIS_MOD "connected! server: %pI4\n", &connected_server_addr.sin_addr);
+			int len = -1;
+			for(;;) {
+				len = kernel_recvmsg(clnt_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
+				if (len > 0) {
+					int ready = 0;
+					spin_lock(&ctr_lock);
+					memset(message_received, 0, sizeof(message_received));
+					if (strncmp(buf, "DONE", 4) == 0) {
+						strscpy(message_received, buf, sizeof(buf));
+						ready = 1;
+					} else {
+						pr_info(THIS_MOD "server responds with unknown message. Discarded\n");
+					}
+					spin_unlock(&ctr_lock);
+					if (ready == 1) {
+						pr_info(THIS_MOD "response message: invalidation completion\n");
+						complete(&is_complete);
+					}
+				} else if (len == 0) {
+					pr_info(THIS_MOD "no response received\n");
+					break;
+				} else {
+					pr_info(THIS_MOD "kernel_recvmsg returned %d\n", len);
+					ret_val = len;
+					break;
+				}
+				//overwrite buf data with NULL char
+				memset(buf, 0, sizeof(buf));			
+			}
+			clnt_socket = NULL;
+			pr_info(THIS_MOD "done receiving response\n");
+		}
+	}
+	pr_info(THIS_MOD "response waiter thread exit. Bye\n");
+	return ret_val;
+}
+
+int send_message_d(char *message) {
+	char msg[MAX_BUFFER_NET] = {0};
+	int len = strscpy(msg, message, sizeof(msg));
+	pr_info(THIS_MOD "sending message %s length %d\n", msg, len);
+	int ret = 0;
+	if (client_socket) {
+		struct msghdr hdr;
+		memset(&hdr, 0, sizeof(hdr));
+		struct kvec iov = {
+			.iov_base = message,
+			.iov_len = sizeof(msg)
+		};
+		ret = kernel_sendmsg(client_socket, &hdr, &iov, 1, strlen(msg));
+		pr_info(THIS_MOD "sent %d bytes\n", ret);
+		//accept connection inkernel_sendmsg separate thread
+		response_acceptor_thread = kthread_run(wait_for_response, (void *)client_socket, "wait_for_response");
+	} else {
+		pr_info(THIS_MOD "client socket is not available\n");
+	}
+	return ret;
+}
+EXPORT_SYMBOL(send_message_d);
+
+int tcp_client_stop_d(void) {
+	int ret = 0;
+	if (client_socket) {
+		if (task_is_running(response_acceptor_thread) || response_acceptor_thread->__state == TASK_NORMAL) {
+			kthread_stop(response_acceptor_thread);
+		}
+		pr_info(THIS_MOD "disconnect from server %s port %d\n", ip_4_addr, port);
+		sock_release(client_socket);
+		client_socket = NULL;
+	}
+
+	return ret;
+}
+EXPORT_SYMBOL(tcp_client_stop_d);
+
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("conn mgr");
