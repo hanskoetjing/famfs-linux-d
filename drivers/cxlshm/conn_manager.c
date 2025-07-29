@@ -146,7 +146,7 @@ int send_response(char *response_message) {
 		struct msghdr hdr;
 		memset(&hdr, 0, sizeof(hdr));
 		struct kvec iov = {
-			.iov_base = message,
+			.iov_base = response_message,
 			.iov_len = sizeof(msg)
 		};
 		ret = kernel_sendmsg(client_socket, &hdr, &iov, 1, strlen(msg));
