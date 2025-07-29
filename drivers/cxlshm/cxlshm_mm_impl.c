@@ -128,7 +128,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 
 		unsigned long size = vma->vm_end - vma->vm_start;
 		long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
-		pr_info("cxl: fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
+		pr_info(THIS_MOD "fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
 
 		if (!dax_alive(cxl_dax_device))
 			run_dax(cxl_dax_device);
@@ -141,12 +141,12 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
 		if (ret < 0) return ret; 
 		*on_mem = o;
-		pr_info("Mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
+		pr_info(THIS_MOD "mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
 				o.end.val, vmf->pgoff);
 		
-		pr_info("Now owned by pid: %d on host: %s\n", on_mem->owner_pid, on_mem->ip_4_addr);
+		pr_info(THIS_MOD "now owned by pid: %d on host: %s\n", on_mem->owner_pid, on_mem->ip_4_addr);
 	} else {
-		pr_info("not yet impl\n");
+		pr_info(THIS_MOD "not yet impl\n");
 	}
 	return ret;
 }
@@ -224,8 +224,8 @@ int is_owner(pid_t pid) {
 	if (owner_on_memory > 0 && owner_on_memory == pid) 
 		ret = 1;
 	else
-		ret = owner_on_memory;
-	
+		ret = owner_on_mem->owner_pid;
+	pr_info(THIS_MOD "return: %d\n", ret);
 	return ret;
 }
 EXPORT_SYMBOL(is_owner);
