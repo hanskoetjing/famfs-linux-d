@@ -81,15 +81,15 @@ static int accept_connection(void *socket_in) {
 	while(!kthread_should_stop()) {
 		kernel_accept(srv_socket, &new_socket, 0);
 		if (new_socket) {
-			struct sockaddr_in connected_client_addr;
+			struct sockaddr_in connected_server_addr;
 			struct msghdr hdr;
 			memset(&hdr, 0, sizeof(hdr));
 			struct kvec iov = {
 				.iov_base = buf,
 				.iov_len = sizeof(buf) - 1
 			};
-			kernel_getpeername(new_socket, (struct sockaddr *)&connected_client_addr);
-			pr_info(THIS_MOD "connected! client: %pI4\n", &connected_client_addr.sin_addr);
+			kernel_getpeername(new_socket, (struct sockaddr *)&connected_server_addr);
+			pr_info(THIS_MOD "connected! client: %pI4\n", &connected_server_addr.sin_addr);
 			int len = -1;
 			connected_client_socket = new_socket;
 			for(;;) {
@@ -182,6 +182,7 @@ int tcp_client_start_d(char *ip_4_addr, int port) {
 	if (!client_socket) {
 		strscpy(client_ip_4_addr, ip_4_addr, sizeof(ip_4_addr));
 		client_port = port;
+		pr_info(THIS_MOD "connecting to: %s port %d\n", client_ip_4_addr, client_port);
 		ret = sock_create_kern(&init_net, AF_INET, SOCK_STREAM, IPPROTO_TCP, &client_socket);
 		if (ret < 0) return ret;
 		memset(&client_sockaddr, 0, sizeof(client_sockaddr));
@@ -207,15 +208,15 @@ static int wait_for_response(void *socket_in) {
 	pr_info(THIS_MOD "waiting for response\n");
 	while(!kthread_should_stop()) {
 		if (clnt_socket) {
-			struct sockaddr_in connected_server_addr;
+			struct sockaddr_in connected_client_addr;
 			struct msghdr hdr;
 			memset(&hdr, 0, sizeof(hdr));
 			struct kvec iov = {
 				.iov_base = buf,
 				.iov_len = sizeof(buf) - 1
 			};
-			kernel_getpeername(clnt_socket, (struct sockaddr *)&connected_server_addr);
-			pr_info(THIS_MOD "connected! server: %pI4\n", &connected_server_addr.sin_addr);
+			kernel_getpeername(clnt_socket, (struct sockaddr *)&connected_client_addr);
+			pr_info(THIS_MOD "connected! server: %pI4\n", &connected_client_addr.sin_addr);
 			int len = -1;
 			for(;;) {
 				len = kernel_recvmsg(clnt_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
