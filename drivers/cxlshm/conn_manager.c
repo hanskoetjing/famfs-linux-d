@@ -118,11 +118,13 @@ static int accept_connection(void *socket_in) {
 					pr_info(THIS_MOD "client closed connection.\n");
 					break;
 				} else if (len == -EAGAIN) {
+					pr_info(THIS_MOD "socket not available\n");
 					msleep(10);
-					//int accept_connection(void *socket_in);
+					int accept_connection(void *socket_in);
 				} else {
+					pr_info(THIS_MOD "kernel_accept returned %d\n", len);
 					ret_val = len;
-					//break;
+					break;
 				}
 				//overwrite buf data with NULL char
 				memset(buf, 0, sizeof(buf));			
@@ -140,7 +142,7 @@ static int accept_connection(void *socket_in) {
 int send_response(char *response_message) {
 	char msg[MAX_BUFFER_NET] = {0};
 	int len = strscpy(msg, response_message, sizeof(msg));
-	pr_info("Sending response %s length %d\n", msg, len);
+	pr_info(THIS_MOD "sending response %s length %d\n", msg, len);
 	int ret = 0;
 	if (client_socket) {
 		struct msghdr hdr;
