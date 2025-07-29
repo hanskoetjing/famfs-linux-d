@@ -72,7 +72,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
     void *kaddr;
     long nr_pages_avail;
 	struct vm_area_struct *vma;
-	int owned = 1;
+	int owned = 0;
 	vm_fault_t ret = 0;
 	pgoff_t dax_pgoff; 
 	struct task_struct *task;
@@ -86,10 +86,12 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	task = rcu_dereference(vma->vm_mm->owner);
 	pid_t owner_on_memory = 0;
 	owner_on_memory = get_owner_on_mem(&owner_on_mem);
-	if (task->pid == owner_on_memory)
+	if (task->pid == owner_on_memory && open_port == owner_on_mem->port)
 		owned = 1;
 	else if (owner_on_memory < 0)
 		owned = 1;
+	pr_info(THIS_MOD "current owner: %d caller PID: %d\n", 
+			owner_on_memory, task->pid);
 
 	if (!owned) {
 		pr_info(THIS_MOD "not owned. Current owner: %d caller PID: %d Try to send message to %s:%d\n", 
@@ -111,6 +113,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 				owned = 1;
 			} else {
 				pr_info(THIS_MOD "not a completion message, maybe handled later %d\n", i);
+				return -EINVAL;
 			}
 			tcp_client_stop_d();
 		} else if (completion_ret_val == 0) {
@@ -122,35 +125,32 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		}
 	}
 
-	if (owned) {
-		o.owner_pid = task->pid;
-		o.vm_start = vmf->address;
-		o.vm_end = vma->vm_end;
-		strscpy(o.ip_4_addr, ip_4_addr, sizeof(o.ip_4_addr));
-		o.port = open_port;
+	o.owner_pid = task->pid;
+	o.vm_start = vmf->address;
+	o.vm_end = vma->vm_end;
+	strscpy(o.ip_4_addr, ip_4_addr, sizeof(o.ip_4_addr));
+	o.port = open_port;
 
-		unsigned long size = vma->vm_end - vma->vm_start;
-		long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
-		pr_info(THIS_MOD "fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
+	unsigned long size = vma->vm_end - vma->vm_start;
+	long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE; 
+	pr_info(THIS_MOD "fault region size: %lu, number of pages: %ld\n", size, nr_of_pages);
 
-		if (!dax_alive(cxl_dax_device))
-			run_dax(cxl_dax_device);
-		
-		nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
-		if (nr_pages_avail < 0) return -ENXIO;
-		//pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
-		o.start = pf;
-		o.end.val = pf.val + nr_of_pages - 1;
-		ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
-		if (ret < 0) return ret; 
-		*on_mem = o;
-		pr_info(THIS_MOD "mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
-				o.end.val, vmf->pgoff);
-		
-		pr_info(THIS_MOD "now owned by pid: %d on host: %s\n", on_mem->owner_pid, on_mem->ip_4_addr);
-	} else {
-		pr_info(THIS_MOD "not yet impl\n");
-	}
+	if (!dax_alive(cxl_dax_device))
+		run_dax(cxl_dax_device);
+	
+	nr_pages_avail = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pf);
+	if (nr_pages_avail < 0) return -ENXIO;
+	//pr_info("Num of page(s) %ld, pfn: 0x%llx, kaddr %p\n", nr_pages_avail, pf.val, kaddr);
+	o.start = pf;
+	o.end.val = pf.val + nr_of_pages - 1;
+	ret = vmf_insert_pfn(vmf->vma, vmf->address, pf.val);
+	if (ret < 0) return ret; 
+	*on_mem = o;
+	pr_info(THIS_MOD "mapping pid %d 0x%lx from mem 0x%llx to 0x%llx (pgoff from user 0x%lx)\n", task->pid, vmf->address , o.start.val,
+			o.end.val, vmf->pgoff);
+	
+	pr_info(THIS_MOD "now owned by pid: %d on host: %s\n", on_mem->owner_pid, on_mem->ip_4_addr);
+
 	return ret;
 }
 
