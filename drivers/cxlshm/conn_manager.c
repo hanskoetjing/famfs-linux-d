@@ -239,7 +239,6 @@ static int wait_for_response(void *socket_in) {
 					pr_info(THIS_MOD "no response received\n");
 					break;
 				} else {
-					pr_info(THIS_MOD "kernel_recvmsg returned %d\n", len);
 					ret_val = len;
 					break;
 				}

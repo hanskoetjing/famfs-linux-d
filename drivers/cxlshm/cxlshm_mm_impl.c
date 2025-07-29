@@ -100,7 +100,6 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 		snprintf(pid_to_send, 15, "PID:%d", get_owner_on_mem(&owner_on_mem));
 		tcp_client_start_d((char *)owner_on_mem->ip_4_addr, owner_on_mem->port);
 		send_message_d(pid_to_send);
-		int i = 0;
 		char received_copy[MAX_BUFFER_NET] = {0};
 		unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
 		long completion_ret_val = wait_for_completion_interruptible_timeout(&is_complete, timeout);
@@ -112,12 +111,12 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 			if (strncmp(received_copy, "DONE", 4) == 0) {
 				owned = 1;
 			} else {
-				pr_info(THIS_MOD "not a completion message, maybe handled later %d\n", i);
+				pr_info(THIS_MOD "not a completion message, maybe handled later %d\n");
 				return -EINVAL;
 			}
 			tcp_client_stop_d();
 		} else if (completion_ret_val == 0) {
-			pr_info(THIS_MOD "timeout occured. retrying\n");
+			pr_info(THIS_MOD "timeout occured\n");
 			return -EAGAIN;
 		} else {
 			pr_info(THIS_MOD "interrupted\n");
