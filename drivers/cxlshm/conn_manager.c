@@ -157,7 +157,7 @@ int send_response(char *response_message) {
 	}
 	return ret;
 }
-EXPORT_SYMBOL(send_reponse);
+EXPORT_SYMBOL(send_response);
 
 void tcp_server_stop(void) {
     if (task_is_running(acceptor_thread) || acceptor_thread->__state == TASK_NORMAL) {
