@@ -269,9 +269,9 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 			if (!strchr(rw.path, ':')) 
 				return -EINVAL;
 			int strlen = strlen(rw.path);
-			char *temporary_data = kzalloc((sizeof(char) * strlen) + 1, GFP_KERNEL);
-			memset(temporary_data, 0, (sizeof(char) * strlen) + 1);
-			int len_copied = strscpy(temporary_data, rw.path, strlen);
+			char *temporary_data = kzalloc(sizeof(char) * (strlen + 1), GFP_KERNEL);
+			memset(temporary_data, 0, sizeof(char) * (strlen + 1));
+			int len_copied = strscpy(temporary_data, rw.path, strlen + 1);
 			char *ip_4_addr_from_user = strsep(&temporary_data, ":");
 			int port_from_user = 0;
 			int ret = kstrtoint(temporary_data, 10, &port_from_user);
