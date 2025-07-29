@@ -86,7 +86,7 @@ int flush_mem_task(pid_t pid) {
             mas_for_each(&mas, vma, ULONG_MAX) {
                 if (vma->vm_start == vm_from_mem) {
                     this_vma = vma;
-                    pr_info(THIS_MOD "found vma %d addr: 0x%lx\n", i, vma->vm_start);
+                    pr_info(THIS_MOD "found vma addr: 0x%lx\n", vma->vm_start);
                     flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
                     zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
                     break;
