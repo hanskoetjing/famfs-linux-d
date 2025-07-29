@@ -14,7 +14,6 @@ struct ownership { //TODO: add version to the struct...
 };
 
 pid_t get_owner_on_mem(volatile struct ownership **owner_on_mem);
-int is_owner(pid_t pid);
 int get_cxl_device(void);
 
 #endif
