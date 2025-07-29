@@ -224,7 +224,7 @@ int is_owner(pid_t pid) {
 		ret = 1;
 	else
 		ret = owner_on_memory;
-	pr_info("owner on mem: %d, requestor pid: %d\n", owner_on_memory->owner_pid, pid);
+	pr_info("owner on mem: %d, requestor pid: %d\n", owner_on_memory, pid);
 	return ret;
 }
 EXPORT_SYMBOL(is_owner);
