@@ -16,7 +16,7 @@ EXPORT_SYMBOL(ctr_lock);
 DECLARE_COMPLETION(is_complete);
 EXPORT_SYMBOL(is_complete);
 struct completion *ownership_transfer_arrived = NULL;
-static struct socket *server_socket;
+static struct socket *server_socket, *client_socket;
 static struct sockaddr_in sin;
 static struct task_struct *acceptor_thread;
 int open_port = DEFAULT_PORT;
@@ -30,6 +30,7 @@ int tcp_server_start(void);
 void tcp_server_stop(void);
 void set_port(int port_param);
 void set_ownership_completion(struct completion *param);
+int send_response(char *response_message)
 
 void set_port(int port_param) {
     open_port = port_param;
@@ -88,6 +89,7 @@ static int accept_connection(void *socket_in) {
 			kernel_getpeername(new_socket, (struct sockaddr *)&connected_client_addr);
 			pr_info(THIS_MOD "connected! client: %pI4\n", &connected_client_addr.sin_addr);
 			int len = -1;
+			client_socket = new_socket;
 			for(;;) {
 				len = kernel_recvmsg(new_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
 				if (len > 0) {
@@ -127,12 +129,35 @@ static int accept_connection(void *socket_in) {
 			}
 			sock_release(new_socket);
 			new_socket = NULL;
+			client_socket = NULL;
 			pr_info(THIS_MOD "done receiving data\n");
 		}
 	}
 	pr_info(THIS_MOD "acceptor thread exit. Bye\n");
 	return ret_val;
 }
+
+int send_response(char *response_message) {
+	char msg[MAX_BUFFER_NET] = {0};
+	int len = strscpy(msg, response_message, sizeof(msg));
+	pr_info("Sending response %s length %d\n", msg, len);
+	int ret = 0;
+	if (client_socket) {
+		struct msghdr hdr;
+		memset(&hdr, 0, sizeof(hdr));
+		struct kvec iov = {
+			.iov_base = message,
+			.iov_len = sizeof(msg)
+		};
+		ret = kernel_sendmsg(client_socket, &hdr, &iov, 1, strlen(msg));
+		pr_info(THIS_MOD "sent response %d bytes\n", ret);
+	} else {
+		pr_info(THIS_MOD "connected client socket is not available\n");
+		ret = -EAGAIN;
+	}
+	return ret;
+}
+EXPORT_SYMBOL(send_reponse);
 
 void tcp_server_stop(void) {
     if (task_is_running(acceptor_thread) || acceptor_thread->__state == TASK_NORMAL) {

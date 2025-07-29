@@ -14,5 +14,6 @@ int tcp_server_start(void);
 void tcp_server_stop(void);
 void set_port(int port_param);
 void set_ownership_completion(struct completion *param);
+int send_response(char *response_message);
 
 #endif
