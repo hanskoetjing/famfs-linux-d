@@ -89,10 +89,10 @@ int flush_mem_task(pid_t pid) {
 		the_task = get_task_from_int_pid(pid);
 		if (the_task != NULL) {
             struct mm_struct *mm = the_task->mm;
+            if (mm == NULL) return -1;
             struct vm_area_struct *vma;
             MA_STATE(mas, &mm->mm_mt, 0, 0);
             get_cxl_device();
-            //temporary set to 0 since this func wont be called for now
             unsigned long vm_from_mem = owner_on_mem->vm_start;
             pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", owner_on_mem->owner_pid, owner_on_mem->vm_start);
             int i = 0;
