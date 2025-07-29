@@ -79,7 +79,7 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	volatile struct ownership *on_mem = (volatile struct ownership *) alloc_table_start;
 	volatile struct ownership *owner_on_mem;
 	
-	pr_info("Page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
+	pr_info(THIS_MOD "page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
 	dax_pgoff = vmf->pgoff + FAT_OFFSET;
 	vma = this_vma = vmf->vma;
@@ -105,14 +105,14 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 			if (strncmp(received_copy, "DONE", 4) == 0) {
 				owned = 1;
 			} else {
-				pr_info("not a completion message, maybe handled later %d\n", i);
+				pr_info(THIS_MOD "not a completion message, maybe handled later %d\n", i);
 			}
 			tcp_client_stop_d();
 		} else if (completion_ret_val == 0) {
-			pr_info("timeout occured. retrying\n");
+			pr_info(THIS_MOD "timeout occured. retrying\n");
 			return -EAGAIN;
 		} else {
-			pr_info("interrupted\n");
+			pr_info(THIS_MOD "interrupted\n");
 			return -EAGAIN;
 		}
 	} else if (owned < 0) {
@@ -158,7 +158,7 @@ const struct vm_operations_struct cxl_helper_file_vm_ops = {
 
 static int mmap_helper(struct file *filp, struct vm_area_struct *vma) {
 	unsigned long size = vma->vm_end - vma->vm_start;
-	pr_info("cxl: mmap region size: %lu\n", size);
+	pr_info(THIS_MOD "mmap region size: %lu\n", size);
 	if (size == 0)
 		return -EINVAL;
 	vma->vm_ops = &cxl_helper_file_vm_ops;
@@ -220,11 +220,12 @@ int is_owner(pid_t pid) {
 	int ret = 0;
 	volatile struct ownership *owner_on_mem;
 	pid_t owner_on_memory = get_owner_on_mem(&owner_on_mem);
+	pr_info(THIS_MOD "owner on mem: %d, requestor pid: %d\n", owner_on_memory, pid);
 	if (owner_on_memory > 0 && owner_on_memory == pid) 
 		ret = 1;
 	else
 		ret = owner_on_memory;
-	pr_info("owner on mem: %d, requestor pid: %d\n", owner_on_memory, pid);
+	
 	return ret;
 }
 EXPORT_SYMBOL(is_owner);
@@ -233,17 +234,17 @@ int get_cxl_device(void) {
 	int l = lookup_daxdev(device_path, &dax_dev_num);
 	volatile struct ownership *owner_on_mem;
 	if (!l) {
-		pr_info("dax dev num: %d\n", dax_dev_num);
+		pr_info(THIS_MOD "dax dev num: %d\n", dax_dev_num);
 		cxl_dax_device = dax_dev_get(dax_dev_num);
 		if (cxl_dax_device) {
-			pr_info("got dax_device\n");
+			pr_info(THIS_MOD "got dax_device\n");
 			int ret = read_allocation_table();
 			if (ret < 0) return ret;
 			end_pfn = begin_pfn;
 			end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
-			pr_info("Current owner on mem: %d\n", get_owner_on_mem(&owner_on_mem));
+			pr_info(THIS_MOD "current owner on mem: %d\n", get_owner_on_mem(&owner_on_mem));
 		} else {
-			pr_info("no cxl_dax_device\n");
+			pr_info(THIS_MOD "no cxl_dax_device\n");
 		}
 		
 	} else {
