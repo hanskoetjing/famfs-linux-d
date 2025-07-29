@@ -221,8 +221,8 @@ int is_owner(pid_t pid) {
 	volatile struct ownership *owner_on_mem;
 	pid_t owner_on_memory = get_owner_on_mem(&owner_on_mem);
 	if (owner_on_memory > 0 && owner_on_memory == pid) ret = 1;
-	else if (owner_on_memory < 0) ret = (int) owner_on_memory;
-	pr_info("owner on mem: %d, requestor pid: %d\n", owner_on_memory, pid);
+	else if (owner_on_memory < 0) ret = owner_on_memory;
+	pr_info("owner on mem: %d, requestor pid: %d\n", ret, pid);
 	return ret;
 }
 EXPORT_SYMBOL(is_owner);
