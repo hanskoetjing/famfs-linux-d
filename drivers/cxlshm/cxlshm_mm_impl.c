@@ -87,9 +87,10 @@ static vm_fault_t cxl_helper_filemap_fault(struct vm_fault *vmf)
 	owned = is_owner(task->pid);
 
 	if (owned == 0) { //should sleep. maybe using fsleep??? too fast -> the receiver cant update 
-		pr_info("Not owned. Current owner: %d caller PID: %d Try to send message\n", get_owner_on_mem(&owner_on_mem), task->pid);
+		pr_info("Not owned. Current owner: %d caller PID: %d Try to send message to %s:%d\n", 
+			get_owner_on_mem(&owner_on_mem), task->pid, owner_on_mem->ip_4_addr, owner_on_mem->port);
 		char pid_to_send[16] = {0};
-		snprintf(pid_to_send, 15, "PID:%d IP: %s port:%d", get_owner_on_mem(&owner_on_mem), owner_on_mem->ip_4_addr, owner_on_mem->port);
+		snprintf(pid_to_send, 15, "PID:%d", get_owner_on_mem(&owner_on_mem));
 		tcp_client_start(owner_on_mem->ip_4_addr, owner_on_mem->port);
 		send_message(pid_to_send);
 		int i = 0;
