@@ -24,6 +24,8 @@ char message_received[MAX_BUFFER_NET] = {0};
 EXPORT_SYMBOL(message_received);
 char ownership_transfer_message[MAX_BUFFER_NET] = {0};
 EXPORT_SYMBOL(ownership_transfer_message);
+char client_ip_4_addr[16] = {0};
+int client_port = 0;
 
 static int accept_connection(void *socket_in);
 int tcp_server_start(void);
@@ -178,6 +180,8 @@ int tcp_client_start_d(char *ip_4_addr, int port) {
 	int ret = 0;
 
 	if (!client_socket) {
+		strscpy(client_ip_4_addr, ip_4_addr, sizeof(ip_4_addr));
+		client_port = port;
 		ret = sock_create_kern(&init_net, AF_INET, SOCK_STREAM, IPPROTO_TCP, &client_socket);
 		if (ret < 0) return ret;
 		memset(&client_sockaddr, 0, sizeof(client_sockaddr));
@@ -279,7 +283,7 @@ int tcp_client_stop_d(void) {
 		if (task_is_running(response_acceptor_thread) || response_acceptor_thread->__state == TASK_NORMAL) {
 			kthread_stop(response_acceptor_thread);
 		}
-		pr_info(THIS_MOD "disconnect from server %s port %d\n", ip_4_addr, port);
+		pr_info(THIS_MOD "disconnect from server %s port %d\n", client_ip_4_addr, client_port);
 		sock_release(client_socket);
 		client_socket = NULL;
 	}
