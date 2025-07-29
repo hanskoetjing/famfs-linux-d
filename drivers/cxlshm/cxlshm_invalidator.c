@@ -47,7 +47,7 @@ int invalidate_mem_area(void *data) {
                 } else {
                     pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", received_copy, ret);
                 }
-                ret = send_response_d("DONE");
+                ret = send_response("DONE");
                 pr_info(THIS_MOD "bytes send %d\n", ret);
                 reinit_completion(&ownership_transfer_arrived);
             }
