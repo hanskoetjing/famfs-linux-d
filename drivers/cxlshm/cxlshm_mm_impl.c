@@ -6,6 +6,7 @@
 #include <linux/uaccess.h>
 #include <linux/io.h>
 #include <linux/mm.h>
+#include <linux/mman.h>
 #include <linux/string.h>
 #include <linux/types.h>
 #include <linux/namei.h>
@@ -63,6 +64,9 @@ static vm_fault_t cxl_helper_fault(struct vm_fault *vmf) {
 
 	is_allocatable_to_this_task = change_ownership(get_owner_pid_on_mem(), current->pid);
 
+	if(vmf->vma->vm_flags | MAP_CXLSHM)
+		pr_info(THIS_MOD "it's me\n");
+
 	if (is_allocatable_to_this_task) {
 		vmfault_handled = handle_fault_on_cxldax(vmf);
 		return vmfault_handled;
@@ -84,7 +88,7 @@ static int mmap_helper(struct file *filp, struct vm_area_struct *vma) {
 		return -EINVAL;
 	vma->vm_ops = &cxl_helper_vm_ops;
 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-	vm_flags_set(vma, VM_IO | VM_PFNMAP | VM_DONTEXPAND | VM_DONTDUMP);
+	vm_flags_set(vma, VM_IO | VM_PFNMAP | VM_DONTEXPAND | VM_DONTDUMP | MAP_CXLSHM);
 	//not remap_pfn_range in here, will be handled by page fault function
 	return 0;
 }
