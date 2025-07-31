@@ -9,7 +9,7 @@
 #include <linux/completion.h> 
 #include "conn_manager.h"
 
-#define THIS_MOD "Connection Manager: "
+#define THIS_MOD "cxlshm_tcpconnmgr: "
 
 DEFINE_SPINLOCK(ctr_lock);
 EXPORT_SYMBOL(ctr_lock);
@@ -266,9 +266,13 @@ int send_message_d(char *message) {
 			.iov_len = sizeof(msg)
 		};
 		ret = kernel_sendmsg(client_socket, &hdr, &iov, 1, strlen(msg));
-		pr_info(THIS_MOD "sent %d bytes\n", ret);
-		//accept connection inkernel_sendmsg separate thread
-		response_acceptor_thread = kthread_run(wait_for_response, (void *)client_socket, "wait_for_response");
+		if (ret >= 0) {
+			pr_info(THIS_MOD "sent %d bytes\n", ret);
+			//accept connection inkernel_sendmsg separate thread
+			response_acceptor_thread = kthread_run(wait_for_response, (void *)client_socket, "wait_for_response");
+		} else {
+			pr_info(THIS_MOD "error happened when sending message: %d\n", ret);
+		}
 	} else {
 		pr_info(THIS_MOD "client socket is not available\n");
 	}
@@ -291,6 +295,22 @@ int tcp_client_stop_d(void) {
 }
 EXPORT_SYMBOL(tcp_client_stop_d);
 
+static int __init cxlshm_tcpconnmgr_init(void) {	
+    tcp_server_start();
 
+	//init done
+	pr_info(THIS_MOD "loaded\n");
+	return 0;
+}
+
+static void __exit cxlshm_tcpconnmgr_exit(void) {
+    //stopping tcp server
+	tcp_server_stop();
+	//exit done
+	pr_info(THIS_MOD ": unloaded\n"); 
+}
+
+module_init(cxlshm_tcpconnmgr_init);
+module_exit(cxlshm_tcpconnmgr_exit);
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("conn mgr");
+MODULE_DESCRIPTION("TCP connection manager for CXLSHM");
