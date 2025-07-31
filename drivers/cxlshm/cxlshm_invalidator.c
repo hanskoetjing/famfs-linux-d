@@ -74,7 +74,7 @@ static int invalidate_vma(struct vm_area_struct *vma) {
     struct mmu_gather tlb;
     pr_info(THIS_MOD "Invalidating VMA 0x%lx - 0x%lx\n", vma->vm_start, vma->vm_end);
     tlb_gather_mmu(&tlb, task_mm);
-    change_protection_range_vma(&tlb, vma, vma->vm_start, vma->vm_end, PAGE_NONE);
+    change_protection_range_vma(&tlb, vma, vma->vm_start, vma->vm_end, PAGE_NONE, MM_CP_UFFD_WP);
     tlb_finish_mmu(&tlb);
     return 0;
 }
