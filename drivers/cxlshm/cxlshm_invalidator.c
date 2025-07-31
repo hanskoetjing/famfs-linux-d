@@ -70,7 +70,7 @@ struct task_struct *get_task_from_int_pid(pid_t pid) {
 }
 
 
-static int invalidate_vma(struct vm_area_struct *vma) {
+/*static int invalidate_vma(struct vm_area_struct *vma) {
     struct mm_struct *task_mm = vma->vm_mm;
     struct mmu_gather tlb;
     pr_info(THIS_MOD "Invalidating VMA 0x%lx - 0x%lx\n", vma->vm_start, vma->vm_end);
@@ -78,7 +78,7 @@ static int invalidate_vma(struct vm_area_struct *vma) {
     change_protection_range_vma(&tlb, vma, vma->vm_start, vma->vm_end, PAGE_NONE, MM_CP_UFFD_WP);
     tlb_finish_mmu(&tlb);
     return 0;
-}
+}*/
 
 int flush_mem_task(pid_t pid) {
 	int ret = 0;
@@ -100,7 +100,7 @@ int flush_mem_task(pid_t pid) {
                 if (vma->vm_flags | MAP_CXLSHM) {
                     this_vma = vma;
                     pr_info(THIS_MOD "found vma addr: 0x%lx\n", vma->vm_start);
-                    invalidate_vma(vma);
+                    //invalidate_vma(vma);
                     /*
                     flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
                     zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary

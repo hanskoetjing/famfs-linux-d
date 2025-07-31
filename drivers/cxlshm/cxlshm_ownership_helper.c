@@ -31,7 +31,8 @@ int change_ownership(pid_t current_owner, pid_t requestor) {
     } else {
         pr_info(THIS_MOD "different pid. takeover ownership\n");
         char pid_to_send[16] = {0};
-		snprintf(pid_to_send, 15, "PID:%d", get_owner_pid_on_mem());
+		//snprintf(pid_to_send, 15, "PID:%d", get_owner_pid_on_mem());
+		snprintf(pid_to_send, 15, "PID:%d", requestor);
         pr_info(THIS_MOD "message: %s\n", pid_to_send);
         int dest_port = 0;
         char *dest_ip_4_addr = kzalloc(sizeof(char) * 16, GFP_KERNEL);
