@@ -2,6 +2,7 @@
 #include <linux/init.h>
 #include <linux/mm.h>
 #include <linux/mman.h>
+#include <asm-generic/tlb.h>
 #include <linux/string.h>
 #include <linux/types.h>
 #include <linux/ioport.h>
