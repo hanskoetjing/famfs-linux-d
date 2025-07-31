@@ -512,6 +512,37 @@ static long change_protection_range(struct mmu_gather *tlb,
 	return pages;
 }
 
+//redefine this function to expose this (to change protection)
+long change_protection_range_vma(struct mmu_gather *tlb,
+		struct vm_area_struct *vma, unsigned long addr,
+		unsigned long end, pgprot_t newprot, unsigned long cp_flags)
+{
+	struct mm_struct *mm = vma->vm_mm;
+	pgd_t *pgd;
+	unsigned long next;
+	long pages = 0, ret;
+
+	BUG_ON(addr >= end);
+	pgd = pgd_offset(mm, addr);
+	tlb_start_vma(tlb, vma);
+	do {
+		next = pgd_addr_end(addr, end);
+		ret = change_prepare(vma, pgd, p4d, addr, cp_flags);
+		if (ret) {
+			pages = ret;
+			break;
+		}
+		if (pgd_none_or_clear_bad(pgd))
+			continue;
+		pages += change_p4d_range(tlb, vma, pgd, addr, next, newprot,
+					  cp_flags);
+	} while (pgd++, addr = next, addr != end);
+
+	tlb_end_vma(tlb, vma);
+
+	return pages;
+}
+
 long change_protection(struct mmu_gather *tlb,
 		       struct vm_area_struct *vma, unsigned long start,
 		       unsigned long end, unsigned long cp_flags)
