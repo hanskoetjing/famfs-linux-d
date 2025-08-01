@@ -69,7 +69,6 @@ int change_ownership(pid_t current_owner, pid_t requestor) {
 				pr_info(THIS_MOD "not a completion message, maybe handled later\n");
 				return -EINVAL;
 			}
-			tcp_client_stop_d();
 		} else if (completion_ret_val == 0) {
 			pr_info(THIS_MOD "timeout occured\n");
 			//automatically take over ownership if timeout occurred
@@ -77,8 +76,9 @@ int change_ownership(pid_t current_owner, pid_t requestor) {
 			ret = 1;
 		} else {
 			pr_info(THIS_MOD "interrupted\n");
-			return -EAGAIN;
+			ret = -EAGAIN;
 		}
+		tcp_client_stop_d();
     }
     return ret;
 }
