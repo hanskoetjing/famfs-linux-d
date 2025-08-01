@@ -68,16 +68,7 @@ struct task_struct *get_task_from_int_pid(pid_t pid) {
         return NULL;
 }
 
-
-/*static int invalidate_vma(struct vm_area_struct *vma) {
-    struct mm_struct *task_mm = vma->vm_mm;
-    struct mmu_gather tlb;
-    pr_info(THIS_MOD "Invalidating VMA 0x%lx - 0x%lx\n", vma->vm_start, vma->vm_end);
-    tlb_gather_mmu(&tlb, task_mm);
-    change_protection_range_vma(&tlb, vma, vma->vm_start, vma->vm_end, PAGE_NONE, MM_CP_UFFD_WP);
-    tlb_finish_mmu(&tlb);
-    return 0;
-}*/
+extern int invalidate_vma(struct vm_area_struct *vma);
 
 int flush_mem_task(pid_t pid) {
 	int ret = 0;
@@ -96,14 +87,16 @@ int flush_mem_task(pid_t pid) {
             unsigned long vm_from_mem = owner_on_mem->vm_start;
             pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", pid_on_mem, owner_on_mem->vm_start);
             mas_for_each(&mas, vma, ULONG_MAX) {
-                if (vma->vm_flags | MAP_CXLSHM) {
+                if (vma->vm_flags & MAP_CXLSHM) {
                     this_vma = vma;
                     pr_info(THIS_MOD "found vma addr: 0x%lx\n", vma->vm_start);
-                    //invalidate_vma(vma);
-                    /*
+                    
+                    invalidate_vma(vma);
+
+                    
                     flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
                     zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
-                    */
+                    
                     break;
                 }
             }
@@ -112,6 +105,7 @@ int flush_mem_task(pid_t pid) {
             } else {
                 pr_info(THIS_MOD "VMA not found\n");
                 ret = -1;
+                reset_ownership();
             }
         } else {
             pr_info(THIS_MOD "task not found\n");
