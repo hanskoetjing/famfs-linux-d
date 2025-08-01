@@ -116,6 +116,14 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 			memset(temporary_data, 0, sizeof(char) * (strlen + 1));
 			strscpy(temporary_data, rw.path, strlen + 1);
 			set_host(temporary_data);
+			char *ip_4_addr_from_user = strsep(&temporary_data, ":");
+			int port_from_user = 0;
+			int ret = kstrtoint(temporary_data, 10, &port_from_user);
+			if (ret >= 0) {
+				strscpy(ip_4_addr, ip_4_addr_from_user, sizeof(ip_4_addr));
+				open_port = port_from_user;
+				set_port(open_port);
+			}
 			break;
 		default:
 			return -ENOTTY;

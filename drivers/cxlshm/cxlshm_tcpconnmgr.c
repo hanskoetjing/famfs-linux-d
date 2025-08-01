@@ -36,6 +36,9 @@ int send_response(char *response_message);
 
 void set_port(int port_param) {
     open_port = port_param;
+	pr_info(THIS_MOD "restart tcp server  using new config");
+	tcp_server_stop();
+	tcp_server_start();
 }
 EXPORT_SYMBOL(set_port);
 
