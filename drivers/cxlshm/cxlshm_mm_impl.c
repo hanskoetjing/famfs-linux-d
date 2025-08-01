@@ -67,7 +67,7 @@ static vm_fault_t cxl_helper_fault(struct vm_fault *vmf) {
 	if(vmf->vma->vm_flags & MAP_CXLSHM)
 		pr_info(THIS_MOD "it's me\n");
 
-	if (is_allocatable_to_this_task) {
+	if (is_allocatable_to_this_task >= 0) {
 		vmfault_handled = handle_fault_on_cxldax(vmf);
 		return vmfault_handled;
 	} else {

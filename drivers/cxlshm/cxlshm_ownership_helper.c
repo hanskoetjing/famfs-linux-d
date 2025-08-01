@@ -72,7 +72,9 @@ int change_ownership(pid_t current_owner, pid_t requestor) {
 			tcp_client_stop_d();
 		} else if (completion_ret_val == 0) {
 			pr_info(THIS_MOD "timeout occured\n");
-			return -EAGAIN;
+			//automatically take over ownership if timeout occurred
+			set_ownership(requestor, this_host, 0, 0);
+			ret = 1;
 		} else {
 			pr_info(THIS_MOD "interrupted\n");
 			return -EAGAIN;
