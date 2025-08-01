@@ -13,6 +13,7 @@
 
 DEFINE_SPINLOCK(ctr_lock);
 EXPORT_SYMBOL(ctr_lock);
+DEFINE_SPINLOCK(client_lock);
 DECLARE_COMPLETION(is_complete);
 EXPORT_SYMBOL(is_complete);
 struct completion *ownership_transfer_arrived = NULL;
@@ -224,7 +225,7 @@ static int wait_for_response(void *socket_in) {
 				len = kernel_recvmsg(clnt_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
 				if (len > 0) {
 					int ready = 0;
-					spin_lock(&ctr_lock);
+					spin_lock(&client_lock);
 					memset(message_received, 0, sizeof(message_received));
 					if (strncmp(buf, "DONE", 4) == 0) {
 						strscpy(message_received, buf, sizeof(buf));
@@ -232,7 +233,7 @@ static int wait_for_response(void *socket_in) {
 					} else {
 						pr_info(THIS_MOD "server responds with unknown message. Discarded\n");
 					}
-					spin_unlock(&ctr_lock);
+					spin_unlock(&client_lock);
 					if (ready == 1) {
 						pr_info(THIS_MOD "response message: invalidation completion\n");
 						complete(&is_complete);
