@@ -25,5 +25,6 @@ int set_ownership(pid_t pid, char *connection_string, unsigned long vma_start, u
 
 //cxlshm_ownership_helper
 int change_ownership(pid_t current_owner, pid_t requestor);
+void set_host(char *host_id_string);
 
 #endif

@@ -20,7 +20,16 @@
 
 #define THIS_MOD "cxlshm_ownership_helper: "
 
+char this_host[24] = {0};
+
+
 int change_ownership(pid_t current_owner, pid_t requestor);
+void set_host(char *host_id_string);
+
+void set_host(char *host_id_string) {
+	strscpy(this_host, host_id_string, sizeof(this_host));
+}
+EXPORT_SYMBOL(set_host);
 
 int change_ownership(pid_t current_owner, pid_t requestor) {
     int ret = 0;
@@ -28,19 +37,22 @@ int change_ownership(pid_t current_owner, pid_t requestor) {
     if (current_owner == requestor) {
         pr_info(THIS_MOD "same pid. Do nothing and continue\n");
         ret = 1;
-    } else {
+    } else if (current_owner < 0) {
+		pr_info(THIS_MOD "no ownership info. Taking over\n");
+		set_ownership(requestor, this_host, 0, 0);
+        ret = 1;
+	} else {
         pr_info(THIS_MOD "different pid. takeover ownership\n");
         char pid_to_send[16] = {0};
-		//snprintf(pid_to_send, 15, "PID:%d", get_owner_pid_on_mem());
-		snprintf(pid_to_send, 15, "PID:%d", requestor);
+		snprintf(pid_to_send, 15, "PID:%d", get_owner_pid_on_mem());
+		//snprintf(pid_to_send, 15, "PID:%d", requestor);
         pr_info(THIS_MOD "message: %s\n", pid_to_send);
         int dest_port = 0;
         char *dest_ip_4_addr = kzalloc(sizeof(char) * 16, GFP_KERNEL);
         memset(dest_ip_4_addr, 0, sizeof(char) * 16);
         get_dest_host(&dest_ip_4_addr, &dest_port);
         pr_info(THIS_MOD "%s %d\n", dest_ip_4_addr, dest_port);
-		//tcp_client_start_d((char *)owner_on_mem->ip_4_addr, owner_on_mem->port);
-        tcp_client_start_d("127.0.0.1", 57580);
+		tcp_client_start_d(dest_ip_4_addr, dest_port);
 		send_message_d(pid_to_send);
 		char received_copy[MAX_BUFFER_NET] = {0};
 		unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
@@ -51,6 +63,7 @@ int change_ownership(pid_t current_owner, pid_t requestor) {
 			memset(message_received, 0, sizeof(message_received));
 			spin_unlock(&ctr_lock);
 			if (strncmp(received_copy, "DONE", 4) == 0) {
+				set_ownership(requestor, this_host, 0, 0);
 				ret = 1;
 			} else {
 				pr_info(THIS_MOD "not a completion message, maybe handled later\n");

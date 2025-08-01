@@ -122,7 +122,6 @@ static int accept_connection(void *socket_in) {
 				} else if (len == -EAGAIN) {
 					pr_info(THIS_MOD "socket not available\n");
 					msleep(10);
-					//accept_connection(socket_in);
 				} else {
 					pr_info(THIS_MOD "kernel_recvmsg returned %d\n", len);
 					ret_val = len;

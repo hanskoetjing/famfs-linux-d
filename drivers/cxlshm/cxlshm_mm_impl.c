@@ -64,7 +64,7 @@ static vm_fault_t cxl_helper_fault(struct vm_fault *vmf) {
 
 	is_allocatable_to_this_task = change_ownership(get_owner_pid_on_mem(), current->pid);
 
-	if(vmf->vma->vm_flags | MAP_CXLSHM)
+	if(vmf->vma->vm_flags & MAP_CXLSHM)
 		pr_info(THIS_MOD "it's me\n");
 
 	if (is_allocatable_to_this_task) {
@@ -115,13 +115,7 @@ static long cxl_range_helper_ioctl(struct file *file, unsigned int cmd, unsigned
 			char *temporary_data = kzalloc(sizeof(char) * (strlen + 1), GFP_KERNEL);
 			memset(temporary_data, 0, sizeof(char) * (strlen + 1));
 			strscpy(temporary_data, rw.path, strlen + 1);
-			char *ip_4_addr_from_user = strsep(&temporary_data, ":");
-			int port_from_user = 0;
-			int ret = kstrtoint(temporary_data, 10, &port_from_user);
-			if (ret >= 0) {
-				strscpy(ip_4_addr, ip_4_addr_from_user, sizeof(ip_4_addr));
-				open_port = port_from_user;
-			}
+			set_host(temporary_data);
 			break;
 		default:
 			return -ENOTTY;
