@@ -247,6 +247,10 @@ static int wait_for_response(void *socket_in) {
 			}
 			clnt_socket = NULL;
 			pr_info(THIS_MOD "done receiving response\n");
+			break;
+		} else {
+			pr_info(THIS_MOD "no client socket\n");
+			break;
 		}
 	}
 	pr_info(THIS_MOD "response waiter thread exit. Bye\n");
