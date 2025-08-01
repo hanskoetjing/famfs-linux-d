@@ -87,7 +87,6 @@ static int mmap_helper(struct file *filp, struct vm_area_struct *vma) {
 	if (size == 0)
 		return -EINVAL;
 	vma->vm_ops = &cxl_helper_vm_ops;
-	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 	vm_flags_set(vma, VM_IO | VM_PFNMAP | VM_DONTEXPAND | VM_DONTDUMP | MAP_CXLSHM);
 	//not remap_pfn_range in here, will be handled by page fault function
 	return 0;
