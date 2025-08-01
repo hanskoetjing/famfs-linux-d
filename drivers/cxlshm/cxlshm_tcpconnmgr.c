@@ -23,6 +23,8 @@ static struct task_struct *acceptor_thread, *response_acceptor_thread;
 int open_port = DEFAULT_PORT;
 char message_received[MAX_BUFFER_NET] = {0};
 EXPORT_SYMBOL(message_received);
+char response_received[MAX_BUFFER_NET] = {0};
+EXPORT_SYMBOL(message_received);
 char ownership_transfer_message[MAX_BUFFER_NET] = {0};
 EXPORT_SYMBOL(ownership_transfer_message);
 char client_ip_4_addr[16] = {0};
@@ -102,20 +104,14 @@ static int accept_connection(void *socket_in) {
 					int ready = 0;
 					spin_lock(&ctr_lock);
 					memset(message_received, 0, sizeof(message_received));
-					if (strncmp(buf, "DONE", 4) == 0) {
-						strscpy(message_received, buf, sizeof(buf));
-						ready = 1;
-					} else if (strncmp(buf, "PID:", 4) == 0) {
+					if (strncmp(buf, "PID:", 4) == 0) {
 						strscpy(ownership_transfer_message, buf, sizeof(buf));
 						ready = 2;
 					} else {
 						pr_info(THIS_MOD "unknown message received. Discarded\n");
 					}
 					spin_unlock(&ctr_lock);
-					if (ready == 1) {
-						pr_info(THIS_MOD "Invalidation completion\n");
-						complete(&is_complete);
-					} else if (ready == 2) {
+					if (ready == 2) {
 						pr_info(THIS_MOD "Invalidation request %s\n", ownership_transfer_message);
 						if (ownership_transfer_arrived != NULL)
 							complete(ownership_transfer_arrived);
@@ -226,9 +222,9 @@ static int wait_for_response(void *socket_in) {
 				if (len > 0) {
 					int ready = 0;
 					spin_lock(&client_lock);
-					memset(message_received, 0, sizeof(message_received));
+					memset(response_received, 0, sizeof(response_received));
 					if (strncmp(buf, "DONE", 4) == 0) {
-						strscpy(message_received, buf, sizeof(buf));
+						strscpy(response_received, buf, sizeof(buf));
 						ready = 1;
 					} else {
 						pr_info(THIS_MOD "server responds with unknown message. Discarded\n");
