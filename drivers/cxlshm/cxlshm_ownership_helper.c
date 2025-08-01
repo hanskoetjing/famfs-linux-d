@@ -58,10 +58,10 @@ int change_ownership(pid_t current_owner, pid_t requestor) {
 		unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
 		long completion_ret_val = wait_for_completion_interruptible_timeout(&is_complete, timeout);
 		if (completion_ret_val > 0) {
-			spin_lock(&ctr_lock);
-			strscpy(received_copy, message_received, sizeof(message_received));
-			memset(message_received, 0, sizeof(message_received));
-			spin_unlock(&ctr_lock);
+			spin_lock(&client_lock);
+			strscpy(received_copy, response_received, sizeof(response_received));
+			memset(response_received, 0, sizeof(response_received));
+			spin_unlock(&client_lock);
 			if (strncmp(received_copy, "DONE", 4) == 0) {
 				set_ownership(requestor, this_host, 0, 0);
 				ret = 1;

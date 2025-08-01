@@ -14,6 +14,7 @@
 DEFINE_SPINLOCK(ctr_lock);
 EXPORT_SYMBOL(ctr_lock);
 DEFINE_SPINLOCK(client_lock);
+EXPORT_SYMBOL(client_lock);
 DECLARE_COMPLETION(is_complete);
 EXPORT_SYMBOL(is_complete);
 struct completion *ownership_transfer_arrived = NULL;
