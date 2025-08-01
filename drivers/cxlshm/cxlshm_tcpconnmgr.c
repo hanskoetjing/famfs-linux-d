@@ -24,7 +24,7 @@ int open_port = DEFAULT_PORT;
 char message_received[MAX_BUFFER_NET] = {0};
 EXPORT_SYMBOL(message_received);
 char response_received[MAX_BUFFER_NET] = {0};
-EXPORT_SYMBOL(message_received);
+EXPORT_SYMBOL(response_received);
 char ownership_transfer_message[MAX_BUFFER_NET] = {0};
 EXPORT_SYMBOL(ownership_transfer_message);
 char client_ip_4_addr[16] = {0};
