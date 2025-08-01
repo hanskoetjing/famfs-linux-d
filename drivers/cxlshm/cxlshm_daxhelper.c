@@ -32,6 +32,37 @@ void get_dest_host(char **dest_ip_4_address, int *dest_port);
 int reset_ownership(void);
 int set_ownership(pid_t pid, char *connection_string, unsigned long vma_start, unsigned long vma_end);
 
+
+//fault handler. owner checking is handled in other c source
+vm_fault_t handle_fault_on_cxldax(struct vm_fault *vmf) {
+    int ret = 0;
+    struct vm_area_struct *vma = vmf->vma;
+    unsigned long size = vma->vm_end - vma->vm_start;
+    long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
+    pfn_t pfn_dax;
+    void *kaddr = NULL;
+    pgoff_t dax_pgoff = vmf->pgoff + FAT_OFFSET;
+    pr_info(THIS_MOD "dax area page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
+		vmf->address, vmf->pgoff);
+    if (!cxl_dax_device) {
+        get_cxl_device();
+        if (!cxl_dax_device)
+            return -ENXIO;
+    }
+    if (!dax_alive(cxl_dax_device)) {
+        run_dax(cxl_dax_device);
+        if (!dax_alive(cxl_dax_device))
+            return -ENXIO;
+    }
+    ret = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pfn_dax);
+    pr_info(THIS_MOD "got pfn at: 0x%llx\n", pfn_dax.val);
+    ret = vmf_insert_pfn(vmf->vma, vmf->address, pfn_dax.val);
+    pr_info(THIS_MOD "insert pfn to vmf done\n");
+    return ret;
+}
+EXPORT_SYMBOL(handle_fault_on_cxldax);
+
+
 //taken from famfs kernel code
 int lookup_daxdev(const char *pathname, dev_t *devno) {
 	struct inode *inode;
@@ -170,31 +201,3 @@ int get_cxl_device(void) {
 }
 EXPORT_SYMBOL(get_cxl_device);
 
-//with no ownership and messaging at first. just try to separate this.
-vm_fault_t handle_fault_on_cxldax(struct vm_fault *vmf) {
-    int ret = 0;
-    struct vm_area_struct *vma = vmf->vma;
-    unsigned long size = vma->vm_end - vma->vm_start;
-    long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
-    pfn_t pfn_dax;
-    void *kaddr = NULL;
-    pgoff_t dax_pgoff = vmf->pgoff + FAT_OFFSET;
-    pr_info(THIS_MOD "dax area page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
-		vmf->address, vmf->pgoff);
-    if (!cxl_dax_device) {
-        get_cxl_device();
-        if (!cxl_dax_device)
-            return -ENXIO;
-    }
-    if (!dax_alive(cxl_dax_device)) {
-        run_dax(cxl_dax_device);
-        if (!dax_alive(cxl_dax_device))
-            return -ENXIO;
-    }
-    ret = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pfn_dax);
-    pr_info(THIS_MOD "got pfn at: 0x%llx\n", pfn_dax.val);
-    ret = vmf_insert_pfn(vmf->vma, vmf->address, pfn_dax.val);
-    pr_info(THIS_MOD "insert pfn to vmf done\n");
-    return ret;
-}
-EXPORT_SYMBOL(handle_fault_on_cxldax);
