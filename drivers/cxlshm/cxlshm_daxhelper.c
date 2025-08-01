@@ -29,6 +29,8 @@ int get_cxl_device(void);
 vm_fault_t handle_fault_on_cxldax(struct vm_fault *vmf);
 pid_t get_owner_pid_on_mem(void);
 void get_dest_host(char **dest_ip_4_address, int *dest_port);
+int reset_ownership(void);
+int set_ownership(pid_t pid, char *connection_string, unsigned long vma_start, unsigned long vma_end);
 
 //taken from famfs kernel code
 int lookup_daxdev(const char *pathname, dev_t *devno) {
@@ -68,6 +70,39 @@ int read_allocation_table(void) {
 	end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
 	return ret;
 }
+
+int reset_ownership(void) {
+	int ret = 0;
+	ret = read_allocation_table();
+	if (ret < 0) return ret;
+	memset(alloc_table_start, 0, sizeof(struct ownership));
+	return 0;
+}
+EXPORT_SYMBOL(reset_ownership);
+
+int set_ownership(pid_t pid, char *connection_string, unsigned long vma_start, unsigned long vma_end) {
+	int ret = 0;
+	ret = read_allocation_table();
+	volatile struct ownership *owner_on_mem = (volatile struct ownership *)alloc_table_start;
+	owner_on_mem->owner_pid = pid;
+	owner_on_mem->vm_start = vma_start;
+	owner_on_mem->vm_end = vma_end;
+	int strlen = strlen(connection_string);
+	char *temporary_data = kzalloc(sizeof(char) * (strlen + 1), GFP_KERNEL);
+	memset(temporary_data, 0, sizeof(char) * (strlen + 1));
+	strscpy(temporary_data, connection_string, strlen + 1);
+	if (!strchr(temporary_data, ':')) 
+		return -EINVAL;
+	char *ip_4_addr_from_user = strsep(&temporary_data, ":");
+	int port_from_user = 0;
+	ret = kstrtoint(temporary_data, 10, &port_from_user);
+	if (ret >= 0) {
+		strscpy((char * const)owner_on_mem->ip_4_addr, ip_4_addr_from_user, sizeof(owner_on_mem->ip_4_addr));
+		owner_on_mem->port = port_from_user;
+	}
+	return 0;
+}
+EXPORT_SYMBOL(set_ownership);
 
 pid_t get_owner_on_mem(volatile struct ownership **owner_on_mem) {
 	int ret = 0;
