@@ -1242,7 +1242,7 @@ config IOMMU_MM_DATA
 	bool
 
 menuconfig CXL_MMAP_HANDLER
-	bool "CXL Shared memory mmap handler"
+	bool "CXL Shared memory mmap handler (syscall)"
 	depends on LIBNVDIMM && NVDIMM_DAX && DEV_DAX && DEV_DAX_PMEM
 	help
 	  For CXL mmap handler syscall
