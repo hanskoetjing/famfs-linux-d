@@ -171,7 +171,7 @@ int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_k
 			return ret;
 		}
 	}
-	ret = dax_direct_access(cxl_dax_device, FAT_OFFSET, nr_pages, DAX_ACCESS, dax_kaddr, &dax_pfn);
+	ret = dax_direct_access(cxl_dax_device, FAT_OFFSET, nr_pages, DAX_ACCESS, dax_kaddr, dax_pfn);
 	return ret;
 }
 EXPORT_SYMBOL(alloc_mem_on_devdax);
