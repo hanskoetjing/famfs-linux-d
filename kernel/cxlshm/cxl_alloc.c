@@ -126,6 +126,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 	
 	vma = find_vma(current->mm, addr);
 	if (!vma) {
+		pr_info(THIS_MOD "failed to find vma");
 		mmap_write_unlock(current->mm);
 		//vfree(kern_buf);
 		return -EFAULT;
