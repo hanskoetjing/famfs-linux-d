@@ -48,57 +48,65 @@ static const struct vm_operations_struct my_vm_ops = {
  */
 SYSCALL_DEFINE2(cxl_alloc, char __user *, dax_device_path, unsigned long, len)
 {
-        //stupid = task_pid_nr(current);
-        //return 0; 
-        unsigned long addr;
-        const unsigned long prot  = PROT_READ | PROT_WRITE;
-        const unsigned long flags = MAP_SHARED | MAP_ANONYMOUS;
-		vm_flags_t vmf = VM_IO | VM_DONTEXPAND | VM_DONTDUMP | VM_USERMAP |
-                 VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE;
-		void *kern_buf;
-		struct vm_area_struct *vma;
-		struct dax_device *cxl_dax_device = NULL;
-		unsigned long populate = 0;
-	    int ret;
-		if (strlen(dax_device_path) <= 0) {
-			pr_info(THIS_MOD "invalid device path");
-			return -EINVAL;
-		}
-		printk(THIS_MOD "allocation %ld byte of cxl memory on device: %s\n", len, dax_device_path);
-        /* Reject nonsense or over‑large requests */
-        if (!len || len > MAX_ALLOC)
-            return -EINVAL;
-		
-		len = PAGE_ALIGN(len);
-
-		//do allocation on devdax
-		int ret = alloc_mem_on_devdax(dax_device_path, len);
-        addr = do_mmap(NULL, 0, len, prot, flags, vmf,
-                       0 /* pgoff */, &populate /* populate */, NULL /* uf */);
-
-		/* find the VMA we just created */
-		vma = find_vma(current->mm, addr);
-	    if (!vma) {
-		    mmap_write_unlock(current->mm);
-			vfree(kern_buf);
-	        return -EFAULT;
-		}
-		vma->vm_ops = &my_vm_ops;
-		/*
-		 * remap_vmalloc_range() will map our vmalloc() buffer
-	     * into that VMA, page by page.
-		 */
-	    ret = remap_vmalloc_range(vma, kern_buf, 0);
-		mmap_write_unlock(current->mm);
-	
-	    if (ret) {
-		    /* on failure, unmap the VMA and free the kernel buffer */
-	        vm_munmap(addr, len);
-			vfree(kern_buf);
-		    return ret;
-	    }
-
-		/* success → return user‑space VA */
-	    return addr;
+    char message_buf[FILE_PATH_LENGTH] = {0};
+	int ret = strncpy_from_user(message_buf, dax_device_path, FILE_PATH_LENGTH);
+	if (ret < 0) return -EFAULT;
+	if (ret >= sizeof(message_buf) || ret == 0) return -EINVAL;
+	return __cxl_alloc(message_buf, len);
 }
 
+unsigned long __cxl_alloc(char *dax_device_path, unsigned long len) 
+{
+	//stupid = task_pid_nr(current);
+    //return 0; 
+    unsigned long addr;
+    const unsigned long prot  = PROT_READ | PROT_WRITE;
+    const unsigned long flags = MAP_SHARED | MAP_ANONYMOUS;
+	vm_flags_t vmf = VM_IO | VM_DONTEXPAND | VM_DONTDUMP | VM_USERMAP |
+				VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE;
+	void *kern_buf;
+	struct vm_area_struct *vma;
+	struct dax_device *cxl_dax_device = NULL;
+	unsigned long populate = 0;
+	int ret;
+	if (strlen(dax_device_path) <= 0) {
+		pr_info(THIS_MOD "invalid device path");
+		return -EINVAL;
+	}
+	printk(THIS_MOD "allocation %ld byte of cxl memory on device: %s\n", len, dax_device_path);
+	/* Reject nonsense or over‑large requests */
+	if (!len || len > MAX_ALLOC)
+		return -EINVAL;
+	
+	len = PAGE_ALIGN(len);
+
+	//do allocation on devdax
+	int ret = alloc_mem_on_devdax(dax_device_path, len);
+	addr = do_mmap(NULL, 0, len, prot, flags, vmf,
+					0 /* pgoff */, &populate /* populate */, NULL /* uf */);
+
+	/* find the VMA we just created */
+	vma = find_vma(current->mm, addr);
+	if (!vma) {
+		mmap_write_unlock(current->mm);
+		vfree(kern_buf);
+		return -EFAULT;
+	}
+	vma->vm_ops = &my_vm_ops;
+	/*
+		* remap_vmalloc_range() will map our vmalloc() buffer
+		* into that VMA, page by page.
+		*/
+	ret = remap_vmalloc_range(vma, kern_buf, 0);
+	mmap_write_unlock(current->mm);
+
+	if (ret) {
+		/* on failure, unmap the VMA and free the kernel buffer */
+		vm_munmap(addr, len);
+		vfree(kern_buf);
+		return ret;
+	}
+
+	/* success → return user‑space VA */
+	return addr;
+}
