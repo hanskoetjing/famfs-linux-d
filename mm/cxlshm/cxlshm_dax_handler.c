@@ -287,7 +287,7 @@ int alloc_mem_on_devdax(char *device_path_param, unsigned long len)
 	unsigned long nr_pages = len >> PAGE_SHIFT;
 	if (!cxl_dax_device)
 	{
-		ret = get_cxl_dax_device(device_path_param);
+		ret = get_cxl_dax_dev(device_path_param);
 		if (ret < 0) 
 		{
 			return ret;

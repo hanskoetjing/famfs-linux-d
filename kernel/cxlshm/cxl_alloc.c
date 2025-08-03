@@ -34,8 +34,30 @@ static vm_fault_t adaptive_vma_fault(struct vm_fault *vmf)
     return 0;  // VM_FAULT_NOPAGE
 }
 
+//with no ownership and messaging at first. just try to separate this.
+static vm_fault_t cxl_helper_fault(struct vm_fault *vmf) {
+	int is_allocatable_to_this_task = 0;
+	pr_info(THIS_MOD "page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
+		vmf->address, vmf->pgoff);
+	vm_fault_t vmfault_handled;
+
+	is_allocatable_to_this_task = change_ownership(get_owner_pid_on_mem(), current->pid);
+
+	if(vmf->vma->vm_flags & MAP_CXLSHM)
+		pr_info(THIS_MOD "it's me\n");
+
+	if (is_allocatable_to_this_task >= 0) {
+		vmfault_handled = handle_fault_on_cxldax(vmf);
+		return vmfault_handled;
+	} else {
+		return VM_FAULT_RETRY;
+	}
+	
+}
+
+
 static const struct vm_operations_struct my_vm_ops = {
-    .fault = adaptive_vma_fault,
+    .fault = cxl_helper_fault,
 };
 
 
