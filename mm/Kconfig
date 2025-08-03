@@ -1242,10 +1242,16 @@ config IOMMU_MM_DATA
 	bool
 
 menuconfig CXL_MMAP_HANDLER
+	bool "CXL Shared memory mmap handler"
+	depends on LIBNVDIMM && NVDIMM_DAX && DEV_DAX && DEV_DAX_PMEM
+	help
+	  For CXL mmap handler syscall
+
+menuconfig CXL_MMAP_DAX_HANDLER
 	tristate "CXL Shared memory mmap handler"
 	depends on LIBNVDIMM && NVDIMM_DAX && DEV_DAX && DEV_DAX_PMEM
 	help
-	  For CXL mmap handler
+	  For CXL mmap dax handler
 
 source "mm/damon/Kconfig"
 
