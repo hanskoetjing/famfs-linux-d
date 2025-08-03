@@ -41,13 +41,13 @@ static vm_fault_t cxl_helper_fault(struct vm_fault *vmf) {
 		vmf->address, vmf->pgoff);
 	vm_fault_t vmfault_handled;
 
-	is_allocatable_to_this_task = change_ownership(get_owner_pid_on_mem(), current->pid);
+	//is_allocatable_to_this_task = change_ownership(get_owner_pid_on_mem(), current->pid);
 
 	if(vmf->vma->vm_flags & MAP_CXLSHM)
 		pr_info(THIS_MOD "it's me\n");
 
 	if (is_allocatable_to_this_task >= 0) {
-		vmfault_handled = handle_fault_on_cxldax(vmf);
+		//vmfault_handled = handle_fault_on_cxldax(vmf);
 		return vmfault_handled;
 	} else {
 		return VM_FAULT_RETRY;

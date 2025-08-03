@@ -76,6 +76,9 @@ int mmap_rnd_compat_bits __read_mostly = CONFIG_ARCH_MMAP_RND_COMPAT_BITS;
 static bool ignore_rlimit_data;
 core_param(ignore_rlimit_data, ignore_rlimit_data, bool, 0644);
 
+pid_t owner_pid;
+EXPORT_SYMBOL(owner_pid);
+
 static void unmap_region(struct mm_struct *mm, struct ma_state *mas,
 		struct vm_area_struct *vma, struct vm_area_struct *prev,
 		struct vm_area_struct *next, unsigned long start,
@@ -1224,6 +1227,11 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 
 	if (!len)
 		return -EINVAL;
+	
+	if (task_pid_nr(current) == owner_pid)
+	{
+		vm_flags |= MAP_OWN;
+	}
 
 	/*
 	 * Does the application expect PROT_READ to imply PROT_EXEC?
