@@ -27,6 +27,8 @@ static void *alloc_table_start = NULL;
 int lookup_daxdev(const char *pathname, dev_t *devno);
 int get_cxl_dax_dev(char *device_path_param);
 int lookup_daxdevice(const char *pathname, struct dax_device **daxdevice);
+int read_owner_info_on_mem(char *device_path_param);
+int get_cxl_dax_device(char *device_path_param);
 /*
 pid_t get_owner_on_mem(volatile struct ownership **owner_on_mem);
 int read_allocation_table(void);
@@ -129,11 +131,11 @@ out_path_put:
 	return err;
 }
 
-int read_owner_info_on_mem(void) 
+int read_owner_info_on_mem(char *device_path_param) 
 {
     int ret = 0;
 	if (!cxl_dax_device) 
-        ret = get_cxl_device();
+        ret = get_cxl_dax_device(device_path_param);
 	if (ret == 0 && !dax_alive(cxl_dax_device))
 		run_dax(cxl_dax_device);
     ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
@@ -258,7 +260,7 @@ int get_cxl_dax_device(char *device_path_param)
 	if (char_copied_length < 0) {
 		strscpy(device_path, DEFAULT_PATH, FILE_PATH_LENGTH);
 	}
-	int lookup_result = lookup_daxdevice(device_path, &dax_dev_num);
+	int lookup_result = lookup_daxdevice(device_path, &cxl_dax_device);
     int ret = 0;
 	if (!lookup_result) {
 		pr_info(THIS_MOD "dax dev num: %d\n", dax_dev_num);
