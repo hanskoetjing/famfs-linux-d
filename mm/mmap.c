@@ -1258,6 +1258,13 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 	if (mm->map_count > sysctl_max_map_count)
 		return -ENOMEM;
 
+	/*set special flag if it is mapped to a cxl mem*/
+	if (task_pid_nr(current) == owner_pid)
+	{
+		pr_info("mmap-ing on cxl memory\n");
+		vm_flags |= MAP_CXLSHM;
+	}
+
 	/* Obtain the address to map to. we verify (or select) it and ensure
 	 * that it represents a valid section of the address space.
 	 */
@@ -1391,12 +1398,7 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 	     (flags & (MAP_POPULATE | MAP_NONBLOCK)) == MAP_POPULATE))
 		*populate = len;
 	
-	//set ownership for mmap on cxl memory 
-	if (task_pid_nr(current) == owner_pid)
-	{
-		pr_info("mmap-ing on cxl memory\n");
-		vm_flags |= MAP_CXLSHM;
-	}
+	
 	return addr;
 }
 

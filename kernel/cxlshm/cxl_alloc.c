@@ -43,6 +43,7 @@ static vm_fault_t cxl_helper_fault(struct vm_fault *vmf) {
 	vm_fault_t vmfault_handled;
 
 	//is_allocatable_to_this_task = change_ownership(get_owner_pid_on_mem(), current->pid);
+	is_allocatable_to_this_task = 1;
 
 	if(vmf->vma->vm_flags & MAP_CXLSHM)
 		pr_info(THIS_MOD "memory on cxl device!\n");
