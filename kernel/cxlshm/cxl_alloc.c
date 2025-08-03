@@ -88,7 +88,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
     const unsigned long prot  = PROT_READ | PROT_WRITE;
     const unsigned long flags = MAP_SHARED | MAP_ANONYMOUS;
 	vm_flags_t vm_flags = VM_IO | VM_DONTEXPAND | VM_DONTDUMP | VM_USERMAP |
-				VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE;
+				VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE | VM_PFNMAP;
 	void *kern_buf;
 	struct vm_area_struct *vma;
 	//struct dax_device *cxl_dax_device = NULL;
@@ -138,7 +138,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 		
 	*/
 	//ret = remap_vmalloc_range(vma, kern_buf, 0);
-	pr_info("mmap-ed remap_vmalloc_range: %d\n", ret);
+	pr_info("allocated pages on cxl dax: %d\n", ret);
 	mmap_write_unlock(current->mm);
 	
 	if (ret < 0) {
