@@ -1241,6 +1241,15 @@ config LOCK_MM_AND_FIND_VMA
 config IOMMU_MM_DATA
 	bool
 
+config CONFIG_CXL_MMAP_HANDLER
+	tristate
+	
+menuconfig CONFIG_CXL_MMAP_HANDLER
+	tristate "CXL Shared memory mmap handler"
+	depends on LIBNVDIMM && NVDIMM_DAX && DEV_DAX && DEV_DAX_PMEM
+	help
+	  For CXL mmap handler
+
 source "mm/damon/Kconfig"
 
 endmenu

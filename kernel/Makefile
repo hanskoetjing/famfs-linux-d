@@ -141,7 +141,8 @@ KCOV_INSTRUMENT_stackleak.o := n
 
 #for cxl shm messaging syscall
 obj-$(CONFIG_SHMM_MSG_SYSCALLS)		+= cxlshm_msg/
-obj-y								+= ownership_helper.o
+obj-$(CONFIG_CXL_MMAP_HANDLER)		+= cxlshm/
+#obj-y								+= ownership_helper.o
 
 obj-$(CONFIG_SCF_TORTURE_TEST) += scftorture.o
 
