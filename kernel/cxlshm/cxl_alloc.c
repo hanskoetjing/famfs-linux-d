@@ -141,7 +141,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 	pr_info("mmap-ed remap_vmalloc_range: %d\n", ret);
 	mmap_write_unlock(current->mm);
 	
-	if (ret) {
+	if (ret < 0) {
 		/* on failure, unmap the VMA and free the kernel buffer */
 		vm_munmap(addr, len);
 		//vfree(kern_buf);
