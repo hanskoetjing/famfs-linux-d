@@ -82,7 +82,7 @@ SYSCALL_DEFINE2(cxl_alloc, char __user *, dax_device_path, unsigned long, len)
 
 unsigned long __cxl_alloc(char *dax_device_path, unsigned long len) 
 {
-	//stupid = task_pid_nr(current);
+	owner_pid = task_pid_nr(current);
     //return 0; 
     unsigned long addr;
     const unsigned long prot  = PROT_READ | PROT_WRITE;

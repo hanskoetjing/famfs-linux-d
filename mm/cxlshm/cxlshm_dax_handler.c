@@ -16,7 +16,7 @@
 #define THIS_MOD				"cxlshm_dax_handler: "
 #define DEFAULT_PATH			"/dev/dax0.0"
 #define FAT_SIZE				2097152
-#define FAT_OFFSET				FAT_SIZE >> PAGE_SHIFT
+#define FAT_OFFSET				(FAT_SIZE >> PAGE_SHIFT)
 
 static char device_path[FILE_PATH_LENGTH] = {0};
 static struct dax_device *cxl_dax_device = NULL;
@@ -172,7 +172,7 @@ int alloc_mem_on_devdax(char *device_path_param, unsigned long len)
 	}
 	void *dax_kaddr;
 	pfn_t dax_pfn;
-	ret = dax_direct_access(cxl_dax_device, FAT_OFFSET, len, DAX_ACCESS, &dax_kaddr, &dax_pfn);
+	ret = dax_direct_access(cxl_dax_device, FAT_OFFSET, nr_pages, DAX_ACCESS, &dax_kaddr, &dax_pfn);
 	return ret;
 }
 EXPORT_SYMBOL(alloc_mem_on_devdax);
