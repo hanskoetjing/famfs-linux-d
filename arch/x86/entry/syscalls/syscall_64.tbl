@@ -433,3 +433,4 @@
 548 common tcp_client_start sys_tcp_client_start
 549 common send_message sys_send_message
 550 common tcp_client_stop sys_tcp_client_stop
+551 common cxl_alloc sys_cxl_alloc
