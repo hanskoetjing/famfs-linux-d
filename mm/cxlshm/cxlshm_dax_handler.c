@@ -30,6 +30,7 @@ int get_cxl_dax_dev(char *device_path_param);
 int lookup_daxdevice(const char *pathname, struct dax_device **daxdevice);
 int read_owner_info_on_mem(char *device_path_param);
 int get_cxl_dax_device(char *device_path_param);
+int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn);
 
 //taken from famfs kernel code
 int lookup_daxdev(const char *pathname, dev_t *devno) 
@@ -158,7 +159,7 @@ int get_cxl_dax_device(char *device_path_param)
 }
 EXPORT_SYMBOL(get_cxl_dax_device);
 
-int alloc_mem_on_devdax(char *device_path_param, unsigned long len) 
+int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn) 
 {
 	int ret = 0;
 	unsigned long nr_pages = len >> PAGE_SHIFT;
@@ -170,9 +171,7 @@ int alloc_mem_on_devdax(char *device_path_param, unsigned long len)
 			return ret;
 		}
 	}
-	void *dax_kaddr;
-	pfn_t dax_pfn;
-	ret = dax_direct_access(cxl_dax_device, FAT_OFFSET, nr_pages, DAX_ACCESS, &dax_kaddr, &dax_pfn);
+	ret = dax_direct_access(cxl_dax_device, FAT_OFFSET, nr_pages, DAX_ACCESS, dax_kaddr, &dax_pfn);
 	return ret;
 }
 EXPORT_SYMBOL(alloc_mem_on_devdax);

@@ -26,7 +26,7 @@ struct mem_alloc {
 
 //cxlshm_dax_handler
 int get_cxl_dax_dev(char *device_path_param);
-int alloc_mem_on_devdax(char *device_path_param, unsigned long len);
+int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn);
 int get_cxl_dax_device(char *device_path_param);
 
 #endif

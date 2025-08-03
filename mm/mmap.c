@@ -1232,6 +1232,7 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 	{
 		pr_info("mmap-ing on cxl memory\n");
 		vm_flags |= MAP_CXLSHM;
+		return 0;
 	}
 
 	/*
