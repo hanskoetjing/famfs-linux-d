@@ -17,6 +17,7 @@
 #define MAX_ALLOC 4 * 1024 * 1024
 
 struct dax_device *cxl_dax_device = NULL;
+extern pid_t owner_pid;
 
 unsigned long __cxl_alloc(char *dax_device_path, unsigned long len);
 
@@ -86,7 +87,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
     unsigned long addr;
     const unsigned long prot  = PROT_READ | PROT_WRITE;
     const unsigned long flags = MAP_SHARED | MAP_ANONYMOUS;
-	vm_flags_t vmf = VM_IO | VM_DONTEXPAND | VM_DONTDUMP | VM_USERMAP |
+	vm_flags_t vm_flags = VM_IO | VM_DONTEXPAND | VM_DONTDUMP | VM_USERMAP |
 				VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE;
 	void *kern_buf;
 	struct vm_area_struct *vma;
@@ -105,11 +106,12 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 	len = PAGE_ALIGN(len);
 
 	//do allocation on devdax
-	ret = alloc_mem_on_devdax(dax_device_path, len);
-	addr = do_mmap(NULL, 0, len, prot, flags, vmf,
+	//ret = alloc_mem_on_devdax(dax_device_path, len);
+	addr = do_mmap(NULL, 0, len, prot, flags, vm_flags,
 					0 /* pgoff */, &populate /* populate */, NULL /* uf */);
 
 	/* find the VMA we just created */
+	/*
 	vma = find_vma(current->mm, addr);
 	if (!vma) {
 		mmap_write_unlock(current->mm);
@@ -120,17 +122,18 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 	/*
 		* remap_vmalloc_range() will map our vmalloc() buffer
 		* into that VMA, page by page.
-		*/
+		
+	
 	ret = remap_vmalloc_range(vma, kern_buf, 0);
 	mmap_write_unlock(current->mm);
 
 	if (ret) {
-		/* on failure, unmap the VMA and free the kernel buffer */
+		/* on failure, unmap the VMA and free the kernel buffer 
 		vm_munmap(addr, len);
 		vfree(kern_buf);
 		return ret;
 	}
-
+*/
 	/* success → return user‑space VA */
 	return addr;
 }

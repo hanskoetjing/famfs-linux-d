@@ -1230,6 +1230,7 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 	
 	if (task_pid_nr(current) == owner_pid)
 	{
+		pr_info("mmap-ing on cxl memory\n");
 		vm_flags |= MAP_CXLSHM;
 	}
 
