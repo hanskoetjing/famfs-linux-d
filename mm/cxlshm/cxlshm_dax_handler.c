@@ -31,6 +31,7 @@ int lookup_daxdevice(const char *pathname, struct dax_device **daxdevice);
 int read_owner_info_on_mem(char *device_path_param);
 int get_cxl_dax_device(char *device_path_param);
 int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn);
+vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf);
 
 //taken from famfs kernel code
 int lookup_daxdev(const char *pathname, dev_t *devno) 
