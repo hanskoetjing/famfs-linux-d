@@ -15,9 +15,9 @@
 #include <linux/kthread.h>
 
 #include <linux/cxlshm_msg.h>
-#include "dax-private.h"
+#include "../../drivers/dax/dax-private.h"
 #include "conn_manager.h"
-#include "cxlshm-private.h"
+#include "cxlshm_handler_private.h"
 
 #define THIS_MOD "cxlshm_invalidator: "
 
