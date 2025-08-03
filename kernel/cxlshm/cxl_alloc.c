@@ -37,7 +37,7 @@ static vm_fault_t adaptive_vma_fault(struct vm_fault *vmf)
 
 //with no ownership and messaging at first. just try to separate this.
 static vm_fault_t cxl_helper_fault(struct vm_fault *vmf) {
-	int is_allocatable_to_this_task = 0;
+	int is_allocatable_to_this_task = 1;
 	pr_info(THIS_MOD "page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
 	vm_fault_t vmfault_handled;
@@ -45,10 +45,10 @@ static vm_fault_t cxl_helper_fault(struct vm_fault *vmf) {
 	//is_allocatable_to_this_task = change_ownership(get_owner_pid_on_mem(), current->pid);
 
 	if(vmf->vma->vm_flags & MAP_CXLSHM)
-		pr_info(THIS_MOD "it's me\n");
+		pr_info(THIS_MOD "memory on cxl device!\n");
 
-	if (is_allocatable_to_this_task >= 0) {
-		//vmfault_handled = handle_fault_on_cxldax(vmf);
+	if (is_allocatable_to_this_task > 0) {
+		vmfault_handled = handle_fault_on_cxldaxdev(vmf);
 		return vmfault_handled;
 	} else {
 		return VM_FAULT_RETRY;
@@ -137,7 +137,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 		* into that VMA, page by page.
 		
 	*/
-	ret = remap_vmalloc_range(vma, kern_buf, 0);
+	//ret = remap_vmalloc_range(vma, kern_buf, 0);
 	pr_info("mmap-ed remap_vmalloc_range: %d\n", ret);
 	mmap_write_unlock(current->mm);
 	
