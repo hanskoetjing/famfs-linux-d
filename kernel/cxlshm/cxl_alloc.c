@@ -18,6 +18,8 @@
 
 struct dax_device *cxl_dax_device = NULL;
 
+unsigned long __cxl_alloc(char *dax_device_path, unsigned long len);
+
 static vm_fault_t adaptive_vma_fault(struct vm_fault *vmf)
 {
     struct page *page;
@@ -81,7 +83,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 	len = PAGE_ALIGN(len);
 
 	//do allocation on devdax
-	int ret = alloc_mem_on_devdax(dax_device_path, len);
+	ret = alloc_mem_on_devdax(dax_device_path, len);
 	addr = do_mmap(NULL, 0, len, prot, flags, vmf,
 					0 /* pgoff */, &populate /* populate */, NULL /* uf */);
 
