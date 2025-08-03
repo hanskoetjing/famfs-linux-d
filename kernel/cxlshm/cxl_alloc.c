@@ -121,9 +121,9 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 	ret = alloc_mem_on_devdax(dax_device_path, len, &kern_buf, &dax_pfn);
 	addr = do_mmap(NULL, 0, len, prot, flags, vm_flags,
 					0 /* pgoff */, &populate /* populate */, NULL /* uf */);
+	pr_info("mmap-ed address: 0x%lx\n", addr);
 
 	/* find the VMA we just created */
-	
 	vma = find_vma(current->mm, addr);
 	if (!vma) {
 		pr_info(THIS_MOD "failed to find vma");
@@ -138,8 +138,9 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 		
 	*/
 	ret = remap_vmalloc_range(vma, kern_buf, 0);
+	pr_info("mmap-ed remap_vmalloc_range: %d\n", ret);
 	mmap_write_unlock(current->mm);
-
+	
 	if (ret) {
 		/* on failure, unmap the VMA and free the kernel buffer */
 		vm_munmap(addr, len);
