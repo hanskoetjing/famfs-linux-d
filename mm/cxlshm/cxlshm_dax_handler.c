@@ -78,7 +78,7 @@ int read_owner_info_on_mem(char *device_path_param)
     ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
     end_pfn = begin_pfn;
 	end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
-	pr_info(THIS_MOD "read owner info on 0x%llx to 0x%llx\n", begin_pfn.val, end_pfn.val);
+	pr_info(THIS_MOD "read owner info on 0x%llx to 0x%llx with kaddr 0x%p\n", begin_pfn.val, end_pfn.val, alloc_table_start);
 	return ret;
 }
 
@@ -88,6 +88,8 @@ int get_owner_info_on_mem(struct ownership *owner)
 	pr_info(THIS_MOD "get owner info from mem\n");
 	volatile struct ownership * owner_on_memory = (volatile struct ownership *)alloc_table_start;
 	pr_info(THIS_MOD "get owner info from mem 0x%p\n", alloc_table_start);
+	if (!owner_on_memory) 
+		pr_info(THIS_MOD "owner is empty\n");
 	if (owner_on_memory != NULL && owner_on_memory->owner_pid > 0) 
 	{
 		pr_info(THIS_MOD "found ownership info. %d is the owner\n", owner->owner_pid);
