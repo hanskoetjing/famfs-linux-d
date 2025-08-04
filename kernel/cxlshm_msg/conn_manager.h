@@ -1,5 +1,5 @@
-#ifndef CONN_MGR_H   /* Include guard */
-#define CONN_MGR_H
+#ifndef CONN_MGR_K_H   /* Include guard */
+#define CONN_MGR_K_H
 
 #define MAX_BUFFER_NET          128
 #define DEFAULT_PORT            57580

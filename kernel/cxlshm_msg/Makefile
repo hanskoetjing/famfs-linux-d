@@ -1,1 +1,1 @@
-obj-y += cxlshm_msg_sender.o
+obj-$(CONFIG_CXL_MMAP_HANDLER) += cxlshm_tcpconnmgr.o

@@ -15,7 +15,7 @@
 
 #include <linux/cxlshm_msg.h>
 #include "../../drivers/dax/dax-private.h"
-#include "conn_manager.h"
+#include "../../kernel/cxlshm_msg/conn_manager.h"
 #include "cxlshm_handler_private.h"
 
 #define THIS_MOD "cxlshm_ownership_handler: "
@@ -44,7 +44,7 @@ int is_allottable(pid_t requestor_pid, char *address, int port) {
 	else
 	{
 		pr_info(THIS_MOD "owner on memory: %d. Requestor pid: %d\n", owner->owner_pid, requestor_pid);
-		if (owner->owner_pid == requestor_pid)
+		if (owner->owner_pid == requestor_pid && owner->port == port && strncmp(owner->ip_4_addr, address, MAX(strlen(owner->ip_4_addr), strlen(address))) == 0)
 		{
 			/* owned by itself */
 			return requestor_pid;
@@ -58,30 +58,53 @@ int is_allottable(pid_t requestor_pid, char *address, int port) {
 }
 EXPORT_SYMBOL(is_allottable);
 
+void set_new_ownership(struct ownership **new_owner, char *address, int port) 
+{
+	(*new_owner)->owner_pid = task_pid_nr(current);
+	strscpy((*new_owner)->ip_4_addr, address, 16);
+	(*new_owner)->port = port;
+	set_owner_info_on_mem((*new_owner));
+}
+
 int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port) {
 	pr_info(THIS_MOD "ask_for_permission function here %d\n", requestor_pid);
+	struct ownership *owner;
+	int ret = 0;
 	/*the messaging part will go here, but just return 1 for now */
 	if (existing_owner <= 0)
 	{
 		pr_info(THIS_MOD "set ownership on memory to %d\n", requestor_pid);
-		struct ownership *owner;
 		get_owner_info_on_mem(&owner);
-		owner->owner_pid = task_pid_nr(current);
-		strscpy(owner->ip_4_addr, address, 16);
-		owner->port = port;
-		set_owner_info_on_mem(owner);
+		set_new_ownership(&owner, address, port);
 		return requestor_pid;
 	}
 	else if (existing_owner > 0)
 	{
 		pr_info(THIS_MOD "invalidate vma of %d\n", existing_owner);
+		get_owner_info_on_mem(&owner);
+		char pid_to_send[16] = {0};
+		snprintf(pid_to_send, 15, "PID:%d", owner->owner_pid);
+        pr_info(THIS_MOD "message: %s\n", pid_to_send);
+
+		ret = tcp_client_start_d(owner->ip_4_addr, owner->port);
+		if (ret < 0) 
+		{
+			pr_info(THIS_MOD "can't connect to server %s %d\n", owner->ip_4_addr, owner->port);
+			set_new_ownership(&owner, address, port);
+			return requestor_pid; //if can't connect, just take over
+		}
+		
+		char received_copy[MAX_BUFFER_NET] = {0};
+		unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
+		long completion_ret_val = wait_for_completion_interruptible_timeout(&is_complete, timeout);
+		tcp_client_stop_d();
 		return requestor_pid;
 	}
 	else
 	{
 		return -EINVAL;
 	}
-	return 0;
+	return ret;
 }
 EXPORT_SYMBOL(ask_for_permission);
 
