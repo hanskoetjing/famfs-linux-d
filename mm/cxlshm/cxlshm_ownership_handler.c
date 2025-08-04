@@ -35,6 +35,10 @@ int is_allottable(pid_t requestor_pid, char *address, int port) {
 	if (owner->owner_pid <= 0)
 	{
 		pr_info(THIS_MOD "nobody owns this area\n");
+		owner->owner_pid = task_pid_nr(current);
+		strscpy(owner->ip_4_addr, address, 16);
+		owner->port = port;
+		set_owner_info_on_mem(owner);
 		return requestor_pid;
 	}
 	else
@@ -57,7 +61,7 @@ EXPORT_SYMBOL(is_allottable);
 int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port) {
 	pr_info(THIS_MOD "ask_for_permission function here %d\n", requestor_pid);
 	/*the messaging part will go here, but just return 1 for now */
-	if (existing_owner == 0)
+	if (existing_owner <= 0)
 	{
 		pr_info(THIS_MOD "set ownership on memory to %d\n", requestor_pid);
 		struct ownership *owner;
@@ -66,11 +70,12 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 		strscpy(owner->ip_4_addr, address, 16);
 		owner->port = port;
 		set_owner_info_on_mem(owner);
-		return 1;
+		return requestor_pid;
 	}
 	else if (existing_owner > 0)
 	{
 		pr_info(THIS_MOD "invalidate vma of %d\n", existing_owner);
+		return requestor_pid;
 	}
 	else
 	{
