@@ -90,7 +90,7 @@ int get_owner_info_on_mem(struct ownership *owner)
 	volatile struct ownership * owner_on_memory = (volatile struct ownership *)alloc_table_start;
 	pr_info(THIS_MOD "get owner info from mem 0x%p\n", alloc_table_start);
 	pr_info(THIS_MOD "get owner info from memm 0x%d\n", *owner_on_memory);
-	if (!(*owner_on_memory)) 
+	if (!owner_on_memory)
 		pr_info(THIS_MOD "owner is empty\n");
 	if (owner_on_memory != NULL && owner_on_memory->owner_pid > 0) 
 	{
