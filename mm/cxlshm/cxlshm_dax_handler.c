@@ -28,7 +28,6 @@ extern pid_t owner_pid;
 int lookup_daxdev(const char *pathname, dev_t *devno);
 int get_cxl_dax_dev(char *device_path_param);
 int read_owner_info_on_mem(char *device_path_param);
-int get_cxl_dax_device(char *device_path_param);
 int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn);
 vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf);
 void get_current_device_path(char **dev_path);
@@ -141,33 +140,6 @@ int get_cxl_dax_dev(char *device_path_param)
 	return ret;
 }
 EXPORT_SYMBOL(get_cxl_dax_dev);
-
-int get_cxl_dax_device(char *device_path_param) 
-{
-	int char_copied_length = strscpy(device_path, device_path_param, FILE_PATH_LENGTH);
-	if (char_copied_length < 0) {
-		strscpy(device_path, DEFAULT_PATH, FILE_PATH_LENGTH);
-	}
-	int lookup_result = lookup_daxdevice(device_path, &cxl_dax_device);
-    int ret = 0;
-	if (!lookup_result) {
-		pr_info(THIS_MOD "dax dev num: %d\n", dax_dev_num);
-		cxl_dax_device = dax_dev_get(dax_dev_num);
-		if (cxl_dax_device) {
-			pr_info(THIS_MOD "cxl dax device is ready\n");
-		} else {
-			pr_info(THIS_MOD "cxl dax device is not ready\n");
-			ret = -ENXIO;
-		}
-	} else {
-		pr_info(THIS_MOD "can't get dax dev num\n");
-        cxl_dax_device = NULL;
-        ret = -ENXIO;
-	}
-	
-	return ret;
-}
-EXPORT_SYMBOL(get_cxl_dax_device);
 
 int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn) 
 {
