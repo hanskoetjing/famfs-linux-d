@@ -72,7 +72,7 @@ int read_owner_info_on_mem(char *device_path_param)
 {
     int ret = 0;
 	if (!cxl_dax_device) 
-        ret = get_cxl_dax_device(device_path_param);
+        ret = get_cxl_dax_dev(device_path_param);
 	if (ret == 0 && !dax_alive(cxl_dax_device))
 		run_dax(cxl_dax_device);
     ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
