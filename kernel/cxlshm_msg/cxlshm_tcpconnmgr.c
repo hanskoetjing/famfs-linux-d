@@ -32,11 +32,11 @@ char client_ip_4_addr[16] = {0};
 int client_port = 0;
 
 static int accept_connection(void *socket_in);
-int tcp_server_start(void);
-void tcp_server_stop(void);
+int _tcp_server_start(void);
+void _tcp_server_stop(void);
 void set_port(int port_param);
 void set_ownership_completion(struct completion *param);
-int send_response(char *response_message);
+int _send_response(char *response_message);
 
 int _tcp_client_start(char *ip_4_addr, int port);
 int _send_message(char *message);
@@ -345,7 +345,7 @@ SYSCALL_DEFINE1(send_response, char __user *, message) {
 }
 
 SYSCALL_DEFINE0(tcp_client_stop) {
-	return _tcp_server_stop();
+	_tcp_server_stop();
 }
 
 

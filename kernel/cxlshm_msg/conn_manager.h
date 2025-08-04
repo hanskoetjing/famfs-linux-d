@@ -13,11 +13,11 @@ extern spinlock_t client_lock;
 extern struct completion is_complete;
 
 //server side
-int tcp_server_start(void);
-void tcp_server_stop(void);
+int _tcp_server_start(void);
+void _tcp_server_stop(void);
 void set_port(int port_param);
 void set_ownership_completion(struct completion *param);
-int send_response(char *response_message);
+int _send_response(char *response_message);
 
 //client side
 int _tcp_client_start(char *ip_4_addr, int port);
