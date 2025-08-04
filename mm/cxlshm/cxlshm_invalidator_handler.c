@@ -56,7 +56,7 @@ int invalidate_mem_area(void *data)
                     pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", received_copy, ret);
                 }
                 ret = _send_response("DONE");
-                reinit_completion(&ownership_transfer_arrived);
+                reinit_completion(&ownership_transfer_arrival_var);
             }
         } 
         else 
