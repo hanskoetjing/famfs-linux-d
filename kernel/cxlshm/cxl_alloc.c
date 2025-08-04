@@ -37,28 +37,36 @@ static vm_fault_t adaptive_vma_fault(struct vm_fault *vmf)
 
 //with no ownership and messaging at first. just try to separate this.
 static vm_fault_t cxl_helper_fault(struct vm_fault *vmf) {
-	int is_allocatable_to_this_task = 1;
+	int is_allottable_to_this_task = 1;
 	pr_info(THIS_MOD "page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
 	vm_fault_t vmfault_handled;
 
 	//is_allocatable_to_this_task = change_ownership(get_owner_pid_on_mem(), current->pid);
-	is_allocatable_to_this_task = 1;
+	is_allottable_to_this_task = is_allottable(task_pid_nr(current)); //temporary set to 0
 
+	if (is_allottable_to_this_task <= 0) 
+	{
+		is_allottable_to_this_task = ask_for_permission(task_pid_nr(current));
+	}
 	if(vmf->vma->vm_flags & MAP_CXLSHM)
 		pr_info(THIS_MOD "memory on cxl device!\n");
 
-	if (is_allocatable_to_this_task > 0) {
+	if (is_allottable_to_this_task > 0) 
+	{
 		vmfault_handled = handle_fault_on_cxldaxdev(vmf);
 		return vmfault_handled;
-	} else {
+	} 
+	else 
+	{
 		return VM_FAULT_RETRY;
 	}
 	
 }
 
 
-static const struct vm_operations_struct my_vm_ops = {
+static const struct vm_operations_struct my_vm_ops = 
+{
     .fault = cxl_helper_fault,
 };
 

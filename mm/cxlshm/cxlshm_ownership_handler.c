@@ -25,12 +25,24 @@ char this_host[24] = {0};
 
 int change_ownership(pid_t current_owner, pid_t requestor);
 void set_host(char *host_id_string);
+int is_allotted(pid_t requestor_pid);
+
+int is_allotted(pid_t requestor_pid) {
+	return 1;
+}
+EXPORT_SYMBOL(is_allotted);
+
+int ask_for_permission(pid_t requestor_pid) {
+	return 1;
+}
+EXPORT_SYMBOL(ask_for_permission);
 
 void set_host(char *host_id_string) {
 	strscpy(this_host, host_id_string, sizeof(this_host));
 }
 EXPORT_SYMBOL(set_host);
 
+/*
 int change_ownership(pid_t current_owner, pid_t requestor) {
     int ret = 0;
     pr_info(THIS_MOD "current owner pid: %d, requestor pid: %d\n", current_owner, requestor);
@@ -83,3 +95,4 @@ int change_ownership(pid_t current_owner, pid_t requestor) {
     return ret;
 }
 EXPORT_SYMBOL(change_ownership);
+*/
