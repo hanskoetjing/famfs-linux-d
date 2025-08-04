@@ -140,7 +140,7 @@ KCSAN_SANITIZE_stackleak.o := n
 KCOV_INSTRUMENT_stackleak.o := n
 
 #for cxl shm messaging syscall
-obj-$(CONFIG_SHMM_MSG_SYSCALLS)		+= cxlshm_msg/
+obj-$(CONFIG_CXL_MMAP_HANDLER)		+= cxlshm_msg/
 obj-$(CONFIG_CXL_MMAP_HANDLER)		+= cxlshm/
 #obj-y								+= ownership_helper.o
 
