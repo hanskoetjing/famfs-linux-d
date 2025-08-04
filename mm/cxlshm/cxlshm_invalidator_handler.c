@@ -85,7 +85,7 @@ int flush_mem_task(pid_t pid)
 	int ret = 0;
 	struct vm_area_struct *this_vma = NULL;
     struct task_struct *the_task = NULL;
-    volatile struct ownership *owner_on_mem;
+    struct ownership *owner_on_mem;
 	if (pid != -1) 
     {
 		the_task = get_task_from_int_pid(pid);
