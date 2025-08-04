@@ -27,12 +27,14 @@ int change_ownership(pid_t current_owner, pid_t requestor);
 void set_host(char *host_id_string);
 int is_allotted(pid_t requestor_pid);
 
-int is_allotted(pid_t requestor_pid) {
+int is_allottable(pid_t requestor_pid) {
+	pr_info(THIS_MOD "is_allottable function here %d\n", requestor_pid);
 	return 1;
 }
-EXPORT_SYMBOL(is_allotted);
+EXPORT_SYMBOL(is_allottable);
 
 int ask_for_permission(pid_t requestor_pid) {
+	pr_info(THIS_MOD "ask_for_permission function here %d\n", requestor_pid);
 	return 1;
 }
 EXPORT_SYMBOL(ask_for_permission);
