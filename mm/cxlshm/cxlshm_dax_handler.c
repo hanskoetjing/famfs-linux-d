@@ -79,6 +79,7 @@ int read_owner_info_on_mem(char *device_path_param)
     end_pfn = begin_pfn;
 	end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
 	pr_info(THIS_MOD "read owner info on 0x%llx to 0x%llx with kaddr 0x%p\n", begin_pfn.val, end_pfn.val, alloc_table_start);
+	pr_info(THIS_MOD "read owner info with kaddr 0x%p\n", alloc_table_start);
 	return ret;
 }
 
