@@ -94,6 +94,7 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 		{
 			pr_info(THIS_MOD "can't connect to server %s %d\n", owner->ip_4_addr, owner->port);
 			set_new_ownership(&owner, address, port);
+			_tcp_client_stop();
 			return requestor_pid; //if can't connect, just take over
 		}
 		_send_message(pid_to_send);
