@@ -35,7 +35,7 @@ int invalidate_mem_area(void *data)
     memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
     while(!kthread_should_stop()) 
     {
-        long completion_ret_val = wait_for_completion_interruptible(&ownership_transfer_arrived);
+        long completion_ret_val = wait_for_completion_interruptible(&ownership_transfer_arrival_var);
         if (completion_ret_val >= 0) 
         {
             spin_lock(&ctr_lock);
