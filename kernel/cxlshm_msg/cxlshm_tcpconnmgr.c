@@ -33,7 +33,7 @@ int client_port = 0;
 
 static int accept_connection(void *socket_in);
 int _tcp_server_start(void);
-void _tcp_server_stop(void);
+int _tcp_server_stop(void);
 void set_port(int port_param);
 void set_ownership_completion(struct completion *param);
 int _send_response(char *response_message);
@@ -167,7 +167,7 @@ int _send_response(char *response_message) {
 }
 EXPORT_SYMBOL(_send_response);
 
-void _tcp_server_stop(void) {
+int _tcp_server_stop(void) {
     if (task_is_running(acceptor_thread) || acceptor_thread->__state == TASK_NORMAL) {
         kthread_stop(acceptor_thread);
     }
@@ -176,6 +176,7 @@ void _tcp_server_stop(void) {
 		sock_release(server_socket);
 		server_socket = NULL;
 	}
+	return 0;
 }
 EXPORT_SYMBOL(_tcp_server_stop);
 
@@ -344,8 +345,8 @@ SYSCALL_DEFINE1(send_response, char __user *, message) {
 	return _send_response(message_buf);
 }
 
-SYSCALL_DEFINE0(tcp_client_stop) {
-	_tcp_server_stop();
+SYSCALL_DEFINE0(tcp_server_stop) {
+	return _tcp_server_stop();
 }
 
 
