@@ -55,7 +55,7 @@ int invalidate_mem_area(void *data)
                 {
                     pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", received_copy, ret);
                 }
-                ret = send_response("DONE");
+                ret = _send_response("DONE");
                 reinit_completion(&ownership_transfer_arrived);
             }
         } 
@@ -96,8 +96,8 @@ int flush_mem_task(pid_t pid)
                 return -1;
             struct vm_area_struct *vma;
             MA_STATE(mas, &mm->mm_mt, 0, 0);
-            get_cxl_device();
-            pid_t pid_on_mem = get_owner_on_mem(&owner_on_mem);
+            get_owner_info_on_mem(&owner_on_mem);
+            pid_t pid_on_mem = owner_on_mem->owner_pid;
             unsigned long vm_from_mem = owner_on_mem->vm_start;
             pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", pid_on_mem, owner_on_mem->vm_start);
             mas_for_each(&mas, vma, ULONG_MAX) {
@@ -123,7 +123,6 @@ int flush_mem_task(pid_t pid)
             {
                 pr_info(THIS_MOD "VMA not found\n");
                 ret = -1;
-                reset_ownership();
             }
         } 
         else 
