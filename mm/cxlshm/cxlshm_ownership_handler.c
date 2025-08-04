@@ -61,7 +61,7 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 	{
 		pr_info(THIS_MOD "set ownership on memory to %d\n", requestor_pid);
 		struct ownership *owner;
-		get_owner_info_on_mem(owner);
+		get_owner_info_on_mem(&owner);
 		owner->owner_pid = task_pid_nr(current);
 		strscpy(owner->ip_4_addr, address, 16);
 		owner->port = port;

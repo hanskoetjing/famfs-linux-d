@@ -32,7 +32,7 @@ vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf);
 int is_allottable(pid_t requestor_pid, char *address, int port);
 int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port);
 void get_current_device_path(char **dev_path);
-int get_owner_info_on_mem(struct ownership *owner);
+int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
 
 
