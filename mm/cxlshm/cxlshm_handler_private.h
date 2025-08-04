@@ -29,7 +29,11 @@ int get_cxl_dax_dev(char *device_path_param);
 int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn);
 int get_cxl_dax_device(char *device_path_param);
 vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf);
-int is_allottable(pid_t requestor_pid);
-int ask_for_permission(pid_t requestor_pid);
+int is_allottable(pid_t requestor_pid, char *address, int port);
+int ask_for_permission(pid_t existing_owner, pid_t requestor_pid);
+char * get_current_device_path();
+int get_owner_info_on_mem(struct ownership *owner);
+int set_owner_info_on_mem(struct ownership *owner);
+
 
 #endif

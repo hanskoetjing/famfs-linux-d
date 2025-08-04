@@ -27,11 +27,19 @@ extern pid_t owner_pid;
 
 int lookup_daxdev(const char *pathname, dev_t *devno);
 int get_cxl_dax_dev(char *device_path_param);
-int lookup_daxdevice(const char *pathname, struct dax_device **daxdevice);
 int read_owner_info_on_mem(char *device_path_param);
 int get_cxl_dax_device(char *device_path_param);
 int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn);
 vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf);
+char * get_current_device_path();
+int get_owner_info_on_mem(struct ownership *owner);
+int set_owner_info_on_mem(struct ownership *owner);
+
+char * get_current_device_path() 
+{
+	return device_path;
+}
+EXPORT_SYMBOL(get_current_device_path);
 
 //taken from famfs kernel code
 int lookup_daxdev(const char *pathname, dev_t *devno) 
@@ -61,38 +69,6 @@ out_path_put:
 	return err;
 }
 
-int lookup_daxdevice(const char *pathname, struct dax_device **daxdevice) 
-{
-	struct inode *inode;
-	struct path path;
-	int err;
-
-	if (!pathname || !*pathname)
-		return -EINVAL;
-
-	err = kern_path(pathname, LOOKUP_FOLLOW, &path);
-	if (err)
-		return err;
-
-	inode = d_backing_inode(path.dentry);
-	if (!S_ISCHR(inode->i_mode)) 
-	{
-		err = -EINVAL;
-		goto out_path_put;
-	}
-	(*daxdevice) = inode_dax(inode);
-
-	if (dax_alive((*daxdevice)))
-	{
-		err = -ENXIO;
-		goto out_path_put;
-	}
-
-out_path_put:
-	path_put(&path);
-	return err;
-}
-
 int read_owner_info_on_mem(char *device_path_param) 
 {
     int ret = 0;
@@ -105,6 +81,39 @@ int read_owner_info_on_mem(char *device_path_param)
 	end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
 	return ret;
 }
+
+int get_owner_info_on_mem(struct ownership *owner)
+{
+	read_owner_info_on_mem(device_path);
+	volatile struct ownership *owner_on_memory = (volatile struct ownership *)alloc_table_start;
+	if (owner_on_memory->owner_pid > 0) 
+	{
+		pr_info(THIS_MOD "found ownership info. %d is the owner\n", owner->owner_pid);
+		owner = (struct ownership *)owner_on_memory;
+	}
+	else
+	{
+		pr_info(THIS_MOD "no ownership info found. initialising a new one\n");
+		owner = (struct ownership *)kzalloc(sizeof(struct ownership), GFP_KERNEL);
+		owner->owner_pid = 0;
+		owner->port = 0;
+	}
+	return 0;
+}
+EXPORT_SYMBOL(get_owner_info_on_mem);
+
+int set_owner_info_on_mem(struct ownership *owner)
+{
+	read_owner_info_on_mem(device_path);
+	if (owner->owner_pid <= 0)
+	{
+		return -EINVAL;
+	}
+	pr_info(THIS_MOD "writing owner info on special area on mem\n");
+	memcpy(alloc_table_start, owner, sizeof(struct ownership));
+	return 0;
+}
+EXPORT_SYMBOL(set_owner_info_on_mem);
 
 int get_cxl_dax_dev(char *device_path_param) 
 {

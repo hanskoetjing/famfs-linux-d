@@ -25,16 +25,41 @@ char this_host[24] = {0};
 
 int change_ownership(pid_t current_owner, pid_t requestor);
 void set_host(char *host_id_string);
-int is_allotted(pid_t requestor_pid);
+int is_allottable(pid_t requestor_pid, char *address, int port);
+int ask_for_permission(pid_t existing_owner, pid_t requestor_pid);
 
-int is_allottable(pid_t requestor_pid) {
+int is_allottable(pid_t requestor_pid, char *address, int port) {
+	struct ownership *owner;
 	pr_info(THIS_MOD "is_allottable function here %d\n", requestor_pid);
-	return 1;
+	get_owner_info_on_mem(owner);
+	if (owner->owner_pid <= 0)
+	{
+		owner->owner_pid = task_pid_nr(current);
+		strscpy(owner->ip_4_addr, address, 16);
+		owner->port = port;
+		set_owner_info_on_mem(owner);
+		return 1;
+	}
+	else
+	{
+		pr_info(THIS_MOD "owner on memory: %d. Requestor pid: %d\n", owner->owner_pid, requestor_pid);
+		if (owner->owner_pid == requestor_pid)
+		{
+			/* owned by itself */
+			return 1;
+		}
+		else
+		{
+			/*to be checked later, but return 1 for now*/
+			return 1;
+		}
+	}
 }
 EXPORT_SYMBOL(is_allottable);
 
-int ask_for_permission(pid_t requestor_pid) {
+int ask_for_permission(pid_t existing_owner, pid_t requestor_pid) {
 	pr_info(THIS_MOD "ask_for_permission function here %d\n", requestor_pid);
+	/*the messaging part will go here, but just return 1 for now */
 	return 1;
 }
 EXPORT_SYMBOL(ask_for_permission);
