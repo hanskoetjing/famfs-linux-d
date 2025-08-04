@@ -47,11 +47,13 @@ int is_allottable(pid_t requestor_pid, char *address, int port) {
 		if (owner->owner_pid == requestor_pid && owner->port == port && strncmp(owner->ip_4_addr, address, MAX(strlen(owner->ip_4_addr), strlen(address))) == 0)
 		{
 			/* owned by itself */
+			pr_info(THIS_MOD "owned by the caller\n");
 			return requestor_pid;
 		}
 		else
 		{
 			/*to be checked later, but return 1 for now*/
+			pr_info(THIS_MOD "owned by the other process, possibly in other host\n");
 			return ask_for_permission(owner->owner_pid, requestor_pid, address, port);
 		}
 	}
