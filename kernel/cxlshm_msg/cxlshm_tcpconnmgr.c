@@ -38,9 +38,9 @@ void set_port(int port_param);
 void set_ownership_completion(struct completion *param);
 int send_response(char *response_message);
 
-int tcp_client_start(char *ip_4_addr, int port);
-int send_message(char *message);
-int tcp_client_stop(void);
+int _tcp_client_start(char *ip_4_addr, int port);
+int _send_message(char *message);
+int _tcp_client_stop(void);
 
 void set_port(int port_param) {
     open_port = port_param;
@@ -180,7 +180,7 @@ void tcp_server_stop(void) {
 EXPORT_SYMBOL(tcp_server_stop);
 
 //client. move to here for easy recompiling
-int tcp_client_start(char *ip_4_addr, int port) {
+int _tcp_client_start(char *ip_4_addr, int port) {
 	int ret = 0;
 
 	if (!client_socket) {
@@ -203,7 +203,7 @@ int tcp_client_start(char *ip_4_addr, int port) {
 	}
 	return ret;
 }
-EXPORT_SYMBOL(tcp_client_start);
+EXPORT_SYMBOL(_tcp_client_start);
 
 static int wait_for_response(void *socket_in) {
 	int ret_val = 0;
@@ -261,7 +261,7 @@ static int wait_for_response(void *socket_in) {
 	return ret_val;
 }
 
-int send_message(char *message) {
+int _send_message(char *message) {
 	char msg[MAX_BUFFER_NET] = {0};
 	int len = strscpy(msg, message, sizeof(msg));
 	pr_info(THIS_MOD "sending message %s length %d\n", msg, len);
@@ -286,9 +286,9 @@ int send_message(char *message) {
 	}
 	return ret;
 }
-EXPORT_SYMBOL(send_message);
+EXPORT_SYMBOL(_send_message);
 
-int tcp_client_stop(void) {
+int _tcp_client_stop(void) {
 	int ret = 0;
 	if (client_socket) {
 		if (task_is_running(response_acceptor_thread) || response_acceptor_thread->__state == TASK_NORMAL) {
@@ -301,7 +301,53 @@ int tcp_client_stop(void) {
 
 	return ret;
 }
-EXPORT_SYMBOL(tcp_client_stop);
+EXPORT_SYMBOL(_tcp_client_stop);
+
+SYSCALL_DEFINE2(tcp_client_start, char __user *, ip_v4_addr, int, server_port) 
+{
+	char *ip_4_addr = kzalloc(sizeof(char) * 17, GFP_KERNEL);
+	memset(ip_4_addr, 0, 17);
+	int ret = strncpy_from_user(ip_4_addr, ip_v4_addr, sizeof(ip_4_addr));
+	if (ret < 0) return -EFAULT;
+	if (ret >= sizeof(ip_4_addr) || ret == 0) return -EINVAL;
+	return _tcp_client_start(ip_4_addr, server_port);
+}
+
+SYSCALL_DEFINE1(send_message, char __user *, message) 
+{
+	char message_buf[128] = {0};
+	int ret = strncpy_from_user(message_buf, message, sizeof(message_buf));
+	if (ret < 0) return -EFAULT;
+	if (ret >= sizeof(message_buf) || ret == 0) return -EINVAL;
+	return _send_message(message_buf);
+}
+
+SYSCALL_DEFINE0(tcp_client_stop) 
+{
+	return _tcp_client_stop();
+}
+
+
+//tcp server syscall
+SYSCALL_DEFINE1(tcp_server_start, int, server_port) 
+{
+	if (server_port > 0)
+		open_port = server_port;
+	return tcp_server_start();
+}
+
+SYSCALL_DEFINE1(send_response, char __user *, message) {
+	char message_buf[128] = {0};
+	int ret = strncpy_from_user(message_buf, message, sizeof(message_buf));
+	if (ret < 0) return -EFAULT;
+	if (ret >= sizeof(message_buf) || ret == 0) return -EINVAL;
+	return send_response(message_buf);
+}
+
+SYSCALL_DEFINE0(tcp_client_stop) {
+	return tcp_server_stop();
+}
+
 
 /*
 static int __init cxlshm_tcpconnmgr_init(void) {	

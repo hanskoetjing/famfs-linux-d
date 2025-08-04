@@ -86,18 +86,18 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 		snprintf(pid_to_send, 15, "PID:%d", owner->owner_pid);
         pr_info(THIS_MOD "message: %s\n", pid_to_send);
 
-		ret = tcp_client_start(owner->ip_4_addr, owner->port);
+		ret = _tcp_client_start(owner->ip_4_addr, owner->port);
 		if (ret < 0) 
 		{
 			pr_info(THIS_MOD "can't connect to server %s %d\n", owner->ip_4_addr, owner->port);
 			set_new_ownership(&owner, address, port);
 			return requestor_pid; //if can't connect, just take over
 		}
-		send_message(pid_to_send);
+		_send_message(pid_to_send);
 		char received_copy[MAX_BUFFER_NET] = {0};
 		unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
 		long completion_ret_val = wait_for_completion_interruptible_timeout(&is_complete, timeout);
-		tcp_client_stop();
+		_tcp_client_stop();
 		return requestor_pid;
 	}
 	else
