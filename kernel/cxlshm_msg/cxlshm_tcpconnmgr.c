@@ -7,6 +7,7 @@
 #include <linux/inet.h>
 #include <linux/types.h>
 #include <linux/completion.h> 
+#include <linux/syscalls.h>
 #include "conn_manager.h"
 
 #define THIS_MOD "cxlshm_tcpconnmgr_in_kernel: "
