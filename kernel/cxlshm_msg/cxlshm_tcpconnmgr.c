@@ -304,7 +304,7 @@ int _tcp_client_stop(void) {
 }
 EXPORT_SYMBOL(_tcp_client_stop);
 
-SYSCALL_DEFINE2(tcp_client_start, char __user *, ip_v4_addr, int, server_port) 
+SYSCALL_DEFINE2(tcp_client_start, char __user *, ip_v4_addr, int, server_port)
 {
 	char *ip_4_addr = kzalloc(sizeof(char) * 17, GFP_KERNEL);
 	memset(ip_4_addr, 0, 17);
@@ -314,7 +314,7 @@ SYSCALL_DEFINE2(tcp_client_start, char __user *, ip_v4_addr, int, server_port)
 	return _tcp_client_start(ip_4_addr, server_port);
 }
 
-SYSCALL_DEFINE1(send_message, char __user *, message) 
+SYSCALL_DEFINE1(send_message, char __user *, message)
 {
 	char message_buf[128] = {0};
 	int ret = strncpy_from_user(message_buf, message, sizeof(message_buf));
@@ -323,21 +323,22 @@ SYSCALL_DEFINE1(send_message, char __user *, message)
 	return _send_message(message_buf);
 }
 
-SYSCALL_DEFINE0(tcp_client_stop) 
+SYSCALL_DEFINE0(tcp_client_stop)
 {
 	return _tcp_client_stop();
 }
 
 
 //tcp server syscall
-SYSCALL_DEFINE1(tcp_server_start, int, server_port) 
+SYSCALL_DEFINE1(tcp_server_start, int, server_port)
 {
 	if (server_port > 0)
 		open_port = server_port;
 	return _tcp_server_start();
 }
 
-SYSCALL_DEFINE1(send_response, char __user *, message) {
+SYSCALL_DEFINE1(send_response, char __user *, message)
+{
 	char message_buf[128] = {0};
 	int ret = strncpy_from_user(message_buf, message, sizeof(message_buf));
 	if (ret < 0) return -EFAULT;
@@ -345,7 +346,8 @@ SYSCALL_DEFINE1(send_response, char __user *, message) {
 	return _send_response(message_buf);
 }
 
-SYSCALL_DEFINE0(tcp_server_stop) {
+SYSCALL_DEFINE0(tcp_server_stop)
+{
 	return _tcp_server_stop();
 }
 
