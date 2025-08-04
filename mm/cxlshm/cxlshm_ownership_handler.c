@@ -76,7 +76,7 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 	{
 		return -EINVAL;
 	}
-
+	return 0;
 }
 EXPORT_SYMBOL(ask_for_permission);
 
