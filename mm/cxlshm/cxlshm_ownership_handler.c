@@ -93,9 +93,7 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 		if (ret < 0) 
 		{
 			pr_info(THIS_MOD "can't connect to server %s %d\n", owner->ip_4_addr, owner->port);
-			set_new_ownership(&owner, address, port);
-			_tcp_client_stop();
-			return requestor_pid; //if can't connect, just take over
+			set_new_ownership(&owner, address, port);//if can't connect, just take over
 		}
 		else
 		{
@@ -120,7 +118,6 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 				pr_info(THIS_MOD "timeout waiting for response\n");
 				//automatically take over ownership if timeout occurred
 				set_new_ownership(&owner, address, port);
-				//set_ownership(requestor, this_host, 0, 0);
 				ret = 1;
 			} else {
 				pr_info(THIS_MOD "interrupted\n");
