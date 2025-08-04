@@ -86,7 +86,7 @@ int get_owner_info_on_mem(struct ownership *owner)
 {
 	read_owner_info_on_mem(device_path);
 	volatile struct ownership *owner_on_memory = NULL;
-	if (alloc_table_start)
+	if (alloc_table_start != NULL)
 		owner_on_memory = (volatile struct ownership *)alloc_table_start;
 	if (owner_on_memory != NULL && owner_on_memory->owner_pid > 0) 
 	{
