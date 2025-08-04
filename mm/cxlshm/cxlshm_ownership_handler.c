@@ -31,7 +31,7 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 int is_allottable(pid_t requestor_pid, char *address, int port) {
 	struct ownership *owner;
 	pr_info(THIS_MOD "is_allottable function here %d\n", requestor_pid);
-	get_owner_info_on_mem(owner);
+	get_owner_info_on_mem(&owner);
 	if (owner->owner_pid <= 0)
 	{
 		pr_info(THIS_MOD "nobody owns this area\n");
