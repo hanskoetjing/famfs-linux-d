@@ -6,6 +6,7 @@
 
 #define MAX_TIMEOUT_MSEC		3000
 #define FILE_PATH_LENGTH        32
+#define MAX(a, b) ((a) >= (b) ? (a) : (b))
 
 struct ownership { //TODO: add version to the struct...
 	pid_t owner_pid;
