@@ -78,7 +78,7 @@ int read_owner_info_on_mem(char *device_path_param)
     ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
     end_pfn = begin_pfn;
 	end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
-	pr_info(THIS_MOD "read owner info on 0x%lx to 0x%lx\n", begin_pfn.val, end_pfn.val);
+	pr_info(THIS_MOD "read owner info on 0x%llx to 0x%llx\n", begin_pfn.val, end_pfn.val);
 	return ret;
 }
 
