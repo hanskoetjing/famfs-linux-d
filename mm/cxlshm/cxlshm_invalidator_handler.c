@@ -78,7 +78,7 @@ struct task_struct *get_task_from_int_pid(pid_t pid)
         return NULL;
 }
 
-//extern int invalidate_vma(struct vm_area_struct *vma);
+extern int invalidate_vma(struct vm_area_struct *vma);
 
 int flush_mem_task(pid_t pid) 
 {
@@ -106,7 +106,7 @@ int flush_mem_task(pid_t pid)
                     this_vma = vma;
                     pr_info(THIS_MOD "found vma addr: 0x%lx\n", vma->vm_start);
                     
-                    //invalidate_vma(vma);
+                    invalidate_vma(vma);
 
                     
                     flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
