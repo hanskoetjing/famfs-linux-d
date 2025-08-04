@@ -31,7 +31,7 @@ int read_owner_info_on_mem(char *device_path_param);
 int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn);
 vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf);
 void get_current_device_path(char **dev_path);
-int get_owner_info_on_mem(struct ownership *owner);
+int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
 
 void get_current_device_path(char **dev_path) 
@@ -83,15 +83,11 @@ int read_owner_info_on_mem(char *device_path_param)
 	return ret;
 }
 
-int get_owner_info_on_mem(struct ownership *owner)
+int get_owner_info_on_mem(struct ownership **owner)
 {
 	read_owner_info_on_mem(device_path);
 	pr_info(THIS_MOD "get owner info from mem\n");
-	volatile struct ownership * owner_on_memory = (volatile struct ownership *)alloc_table_start;
-	pr_info(THIS_MOD "get owner info from mem 0x%p\n", alloc_table_start);
-	pr_info(THIS_MOD "get owner info from memm 0x%d\n", *owner_on_memory);
-	if (!owner_on_memory)
-		pr_info(THIS_MOD "owner is empty\n");
+	volatile struct ownership *owner_on_memory = (volatile struct ownership *)alloc_table_start;
 	if (owner_on_memory != NULL && owner_on_memory->owner_pid > 0) 
 	{
 		pr_info(THIS_MOD "found ownership info. %d is the owner\n", owner->owner_pid);
@@ -100,9 +96,11 @@ int get_owner_info_on_mem(struct ownership *owner)
 	else
 	{
 		pr_info(THIS_MOD "no ownership info found. initialising a new one\n");
-		owner = (struct ownership *)kzalloc(sizeof(struct ownership), GFP_KERNEL);
-		owner->owner_pid = 0;
-		owner->port = 0;
+		struct ownership *new_owner = (struct ownership *)kzalloc(sizeof(struct ownership), GFP_KERNEL);
+		new_owner->owner_pid = 0;
+		new_owner->port = 0;
+		memcpy((void *)owner_on_memory, (void *)new_owner, sizeof(struct ownership));
+		(*owner) = new_owner;
 	}
 	return 0;
 }
