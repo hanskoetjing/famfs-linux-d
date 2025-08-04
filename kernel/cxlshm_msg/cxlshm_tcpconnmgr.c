@@ -111,7 +111,7 @@ static int accept_connection(void *socket_in) {
 					spin_lock(&ctr_lock);
 					memset(message_received, 0, sizeof(message_received));
 					if (strncmp(buf, "PID:", 4) == 0) {
-						strscpy(ownership_transfer_message, buf, sizeof(buf));
+						strscpy(ownership_transfer_message, buf, sizeof(buf) + 1);
 						ready = 2;
 					} else {
 						pr_info(THIS_MOD "unknown message received. Discarded\n");
@@ -148,7 +148,7 @@ static int accept_connection(void *socket_in) {
 
 int _send_response(char *response_message) {
 	char msg[MAX_BUFFER_NET] = {0};
-	int len = strscpy(msg, response_message, sizeof(msg));
+	int len = strscpy(msg, response_message, sizeof(msg) + 1);
 	pr_info(THIS_MOD "sending response %s length %d\n", msg, len);
 	int ret = 0;
 	if (connected_client_socket) {
@@ -231,7 +231,7 @@ static int wait_for_response(void *socket_in) {
 					spin_lock(&client_lock);
 					memset(response_received, 0, sizeof(response_received));
 					if (strncmp(buf, "DONE", 4) == 0) {
-						strscpy(response_received, buf, sizeof(buf));
+						strscpy(response_received, buf, sizeof(buf) + 1);
 						ready = 1;
 					} else {
 						pr_info(THIS_MOD "server responds with unknown message. Discarded\n");
@@ -265,7 +265,7 @@ static int wait_for_response(void *socket_in) {
 
 int _send_message(char *message) {
 	char msg[MAX_BUFFER_NET] = {0};
-	int len = strscpy(msg, message, sizeof(msg));
+	int len = strscpy(msg, message, sizeof(msg) + 1);
 	pr_info(THIS_MOD "sending message %s length %d\n", msg, len);
 	int ret = 0;
 	if (client_socket) {

@@ -27,6 +27,7 @@ int change_ownership(pid_t current_owner, pid_t requestor);
 void set_host(char *host_id_string);
 int is_allottable(pid_t requestor_pid, char *address, int port);
 int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port);
+void set_new_ownership(struct ownership **new_owner, char *address, int port);
 
 int is_allottable(pid_t requestor_pid, char *address, int port) {
 	struct ownership *owner;
