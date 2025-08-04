@@ -97,10 +97,36 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 			_tcp_client_stop();
 			return requestor_pid; //if can't connect, just take over
 		}
-		_send_message(pid_to_send);
-		char received_copy[MAX_BUFFER_NET] = {0};
-		unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
-		long completion_ret_val = wait_for_completion_interruptible_timeout(&is_complete, timeout);
+		else
+		{
+			_send_message(pid_to_send);
+			char received_copy[MAX_BUFFER_NET] = {0};
+			unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
+			long completion_ret_val = wait_for_completion_interruptible_timeout(&is_complete, timeout);
+			if (completion_ret_val > 0) {
+				spin_lock(&client_lock);
+				strscpy(received_copy, response_received, sizeof(response_received));
+				memset(response_received, 0, sizeof(response_received));
+				spin_unlock(&client_lock);
+				if (strncmp(received_copy, "DONE", 4) == 0) {
+					pr_info(THIS_MOD "ownership transfer completed\n");
+					set_new_ownership(&owner, address, port);
+					ret = requestor_pid;
+				} else {
+					pr_info(THIS_MOD "not a completion message, maybe handled later\n");
+					return -EINVAL;
+				}
+			} else if (completion_ret_val == 0) {
+				pr_info(THIS_MOD "timeout waiting for response\n");
+				//automatically take over ownership if timeout occurred
+				set_new_ownership(&owner, address, port);
+				//set_ownership(requestor, this_host, 0, 0);
+				ret = 1;
+			} else {
+				pr_info(THIS_MOD "interrupted\n");
+				ret = -EAGAIN;
+			}
+		}
 		_tcp_client_stop();
 		return requestor_pid;
 	}
