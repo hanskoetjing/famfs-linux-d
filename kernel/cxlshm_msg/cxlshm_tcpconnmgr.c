@@ -57,7 +57,7 @@ void set_ownership_completion(struct completion *param) {
 }
 EXPORT_SYMBOL(set_ownership_completion);
 
-int tcp_server_start(void) {
+int _tcp_server_start(void) {
 	int ret = 0;
 	if (!server_socket) {
 		pr_info(THIS_MOD "start TCP server on port %d\n", open_port);
@@ -81,7 +81,7 @@ int tcp_server_start(void) {
 	}
 	return ret;
 }
-EXPORT_SYMBOL(tcp_server_start);
+EXPORT_SYMBOL(_tcp_server_start);
 
 static int accept_connection(void *socket_in) {
 	int ret_val = 0;
@@ -145,7 +145,7 @@ static int accept_connection(void *socket_in) {
 	return ret_val;
 }
 
-int send_response(char *response_message) {
+int _send_response(char *response_message) {
 	char msg[MAX_BUFFER_NET] = {0};
 	int len = strscpy(msg, response_message, sizeof(msg));
 	pr_info(THIS_MOD "sending response %s length %d\n", msg, len);
@@ -165,9 +165,9 @@ int send_response(char *response_message) {
 	}
 	return ret;
 }
-EXPORT_SYMBOL(send_response);
+EXPORT_SYMBOL(_send_response);
 
-void tcp_server_stop(void) {
+void _tcp_server_stop(void) {
     if (task_is_running(acceptor_thread) || acceptor_thread->__state == TASK_NORMAL) {
         kthread_stop(acceptor_thread);
     }
@@ -177,7 +177,7 @@ void tcp_server_stop(void) {
 		server_socket = NULL;
 	}
 }
-EXPORT_SYMBOL(tcp_server_stop);
+EXPORT_SYMBOL(_tcp_server_stop);
 
 //client. move to here for easy recompiling
 int _tcp_client_start(char *ip_4_addr, int port) {
@@ -333,7 +333,7 @@ SYSCALL_DEFINE1(tcp_server_start, int, server_port)
 {
 	if (server_port > 0)
 		open_port = server_port;
-	return tcp_server_start();
+	return _tcp_server_start();
 }
 
 SYSCALL_DEFINE1(send_response, char __user *, message) {
@@ -341,11 +341,11 @@ SYSCALL_DEFINE1(send_response, char __user *, message) {
 	int ret = strncpy_from_user(message_buf, message, sizeof(message_buf));
 	if (ret < 0) return -EFAULT;
 	if (ret >= sizeof(message_buf) || ret == 0) return -EINVAL;
-	return send_response(message_buf);
+	return _send_response(message_buf);
 }
 
 SYSCALL_DEFINE0(tcp_client_stop) {
-	return tcp_server_stop();
+	return _tcp_server_stop();
 }
 
 
