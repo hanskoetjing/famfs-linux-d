@@ -26,7 +26,7 @@ char this_host[24] = {0};
 int change_ownership(pid_t current_owner, pid_t requestor);
 void set_host(char *host_id_string);
 int is_allottable(pid_t requestor_pid, char *address, int port);
-int ask_for_permission(pid_t existing_owner, pid_t requestor_pid);
+int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port);
 
 int is_allottable(pid_t requestor_pid, char *address, int port) {
 	struct ownership *owner;
@@ -34,11 +34,8 @@ int is_allottable(pid_t requestor_pid, char *address, int port) {
 	get_owner_info_on_mem(owner);
 	if (owner->owner_pid <= 0)
 	{
-		owner->owner_pid = task_pid_nr(current);
-		strscpy(owner->ip_4_addr, address, 16);
-		owner->port = port;
-		set_owner_info_on_mem(owner);
-		return 1;
+		pr_info(THIS_MOD "nobody owns this area\n");
+		return 0;
 	}
 	else
 	{
@@ -46,21 +43,40 @@ int is_allottable(pid_t requestor_pid, char *address, int port) {
 		if (owner->owner_pid == requestor_pid)
 		{
 			/* owned by itself */
-			return 1;
+			return requestor_pid;
 		}
 		else
 		{
 			/*to be checked later, but return 1 for now*/
-			return 1;
+			return ask_for_permission(owner->owner_pid, requestor_pid, address, port);
 		}
 	}
 }
 EXPORT_SYMBOL(is_allottable);
 
-int ask_for_permission(pid_t existing_owner, pid_t requestor_pid) {
+int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port) {
 	pr_info(THIS_MOD "ask_for_permission function here %d\n", requestor_pid);
 	/*the messaging part will go here, but just return 1 for now */
-	return 1;
+	if (existing_owner == 0)
+	{
+		pr_info(THIS_MOD "set ownership on memory to %d\n", requestor_pid);
+		struct ownership *owner;
+		get_owner_info_on_mem(owner);
+		owner->owner_pid = task_pid_nr(current);
+		strscpy(owner->ip_4_addr, address, 16);
+		owner->port = port;
+		set_owner_info_on_mem(owner);
+		return 1;
+	}
+	else if (existing_owner > 0)
+	{
+		pr_info(THIS_MOD "invalidate vma of %d\n", existing_owner);
+	}
+	else
+	{
+		return -EINVAL;
+	}
+
 }
 EXPORT_SYMBOL(ask_for_permission);
 
