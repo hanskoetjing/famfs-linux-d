@@ -8,6 +8,7 @@
 #include <linux/types.h>
 #include <linux/completion.h> 
 #include <linux/syscalls.h>
+#include <asm-generic/int-ll64.h>
 #include "conn_manager.h"
 
 #define THIS_MOD "cxlshm_tcpconnmgr_in_kernel: "
@@ -111,7 +112,7 @@ static int accept_connection(void *socket_in) {
 					spin_lock(&ctr_lock);
 					memset(message_received, 0, sizeof(message_received));
 					if (strncmp(buf, "PID:", 4) == 0) {
-						strscpy(ownership_transfer_message, buf, sizeof(buf) + 1);
+						strscpy(ownership_transfer_message, buf, sizeof(buf));
 						ready = 2;
 					} else {
 						pr_info(THIS_MOD "unknown message received. Discarded\n");
@@ -148,7 +149,7 @@ static int accept_connection(void *socket_in) {
 
 int _send_response(char *response_message) {
 	char msg[MAX_BUFFER_NET] = {0};
-	int len = strscpy(msg, response_message, sizeof(msg) + 1);
+	int len = strscpy(msg, response_message, sizeof(msg));
 	pr_info(THIS_MOD "sending response %s length %d\n", msg, len);
 	int ret = 0;
 	if (connected_client_socket) {
@@ -231,7 +232,7 @@ static int wait_for_response(void *socket_in) {
 					spin_lock(&client_lock);
 					memset(response_received, 0, sizeof(response_received));
 					if (strncmp(buf, "DONE", 4) == 0) {
-						strscpy(response_received, buf, sizeof(buf) + 1);
+						strscpy(response_received, buf, sizeof(buf));
 						ready = 1;
 					} else {
 						pr_info(THIS_MOD "server responds with unknown message. Discarded\n");
@@ -265,7 +266,7 @@ static int wait_for_response(void *socket_in) {
 
 int _send_message(char *message) {
 	char msg[MAX_BUFFER_NET] = {0};
-	int len = strscpy(msg, message, sizeof(msg) + 1);
+	int len = strscpy(msg, message, sizeof(msg));
 	pr_info(THIS_MOD "sending message %s length %d\n", msg, len);
 	int ret = 0;
 	if (client_socket) {
