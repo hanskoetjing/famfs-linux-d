@@ -20,8 +20,8 @@ void set_ownership_completion(struct completion *param);
 int send_response(char *response_message);
 
 //client side
-int tcp_client_stop_d(void);
-int send_message_d(char *message);
-int tcp_client_start_d(char *ip_4_addr, int port);
+int tcp_client_start(char *ip_4_addr, int port);
+int send_message(char *message);
+int tcp_client_stop(void);
 
 #endif

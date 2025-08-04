@@ -38,6 +38,10 @@ void set_port(int port_param);
 void set_ownership_completion(struct completion *param);
 int send_response(char *response_message);
 
+int tcp_client_start(char *ip_4_addr, int port);
+int send_message(char *message);
+int tcp_client_stop(void);
+
 void set_port(int port_param) {
     open_port = port_param;
 	pr_info(THIS_MOD "restart tcp server  using new config");
@@ -176,7 +180,7 @@ void tcp_server_stop(void) {
 EXPORT_SYMBOL(tcp_server_stop);
 
 //client. move to here for easy recompiling
-int tcp_client_start_d(char *ip_4_addr, int port) {
+int tcp_client_start(char *ip_4_addr, int port) {
 	int ret = 0;
 
 	if (!client_socket) {
@@ -199,7 +203,7 @@ int tcp_client_start_d(char *ip_4_addr, int port) {
 	}
 	return ret;
 }
-EXPORT_SYMBOL(tcp_client_start_d);
+EXPORT_SYMBOL(tcp_client_start);
 
 static int wait_for_response(void *socket_in) {
 	int ret_val = 0;
@@ -257,7 +261,7 @@ static int wait_for_response(void *socket_in) {
 	return ret_val;
 }
 
-int send_message_d(char *message) {
+int send_message(char *message) {
 	char msg[MAX_BUFFER_NET] = {0};
 	int len = strscpy(msg, message, sizeof(msg));
 	pr_info(THIS_MOD "sending message %s length %d\n", msg, len);
@@ -282,9 +286,9 @@ int send_message_d(char *message) {
 	}
 	return ret;
 }
-EXPORT_SYMBOL(send_message_d);
+EXPORT_SYMBOL(send_message);
 
-int tcp_client_stop_d(void) {
+int tcp_client_stop(void) {
 	int ret = 0;
 	if (client_socket) {
 		if (task_is_running(response_acceptor_thread) || response_acceptor_thread->__state == TASK_NORMAL) {
@@ -297,7 +301,7 @@ int tcp_client_stop_d(void) {
 
 	return ret;
 }
-EXPORT_SYMBOL(tcp_client_stop_d);
+EXPORT_SYMBOL(tcp_client_stop);
 
 /*
 static int __init cxlshm_tcpconnmgr_init(void) {	
