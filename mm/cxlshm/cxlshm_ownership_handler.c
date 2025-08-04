@@ -35,7 +35,7 @@ int is_allottable(pid_t requestor_pid, char *address, int port) {
 	if (owner->owner_pid <= 0)
 	{
 		pr_info(THIS_MOD "nobody owns this area\n");
-		return 0;
+		return requestor_pid;
 	}
 	else
 	{
