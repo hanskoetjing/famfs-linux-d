@@ -85,7 +85,7 @@ int get_owner_info_on_mem(struct ownership *owner)
 {
 	read_owner_info_on_mem(device_path);
 	volatile struct ownership *owner_on_memory = (volatile struct ownership *)alloc_table_start;
-	if (owner_on_memory->owner_pid > 0) 
+	if (owner_on_memory && owner_on_memory->owner_pid > 0) 
 	{
 		pr_info(THIS_MOD "found ownership info. %d is the owner\n", owner->owner_pid);
 		owner = (struct ownership *)owner_on_memory;
