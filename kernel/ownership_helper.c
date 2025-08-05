@@ -4,6 +4,8 @@
 #include <linux/pid.h>
 #include <linux/sched.h>
 
+int invalidate_vma(struct vm_area_struct *vma);
+
 int invalidate_vma(struct vm_area_struct *vma) {
     struct mm_struct *task_mm = vma->vm_mm;
     struct mmu_gather tlb;

@@ -13,17 +13,17 @@
 //Tong Xing @UoE
 //modified by Hans @UoE
 
-#define THIS_MOD "cxl_alloc: "
+#define THIS_MOD "cxl_alloc_dsm: "
 #define MAX_ALLOC 4 * 1024 * 1024
 
 struct dax_device *cxl_dax_device = NULL;
 extern pid_t owner_pid;
 
-unsigned long __cxl_alloc(char *dax_device_path, unsigned long len);
-static vm_fault_t cxl_helper_fault(struct vm_fault *vmf);
+unsigned long __cxl_alloc_dsm(char *dax_device_path, unsigned long len);
+static vm_fault_t cxl_dsm_fault_handler(struct vm_fault *vmf);
+static vm_fault_t cxl_dsm_mkwrite_handler(struct vm_fault *vmf);
 
-static vm_fault_t cxl_helper_fault(struct vm_fault *vmf)
-{
+static vm_fault_t cxl_dsm_fault_handler(struct vm_fault *vmf) {
 	int is_allottable_to_this_task = 1;
 	pr_info(THIS_MOD "page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
@@ -46,12 +46,19 @@ static vm_fault_t cxl_helper_fault(struct vm_fault *vmf)
 	
 }
 
+static vm_fault_t cxl_dsm_mkwrite_handler(struct vm_fault *vmf) 
+{
+	pr_info(THIS_MOD "mkwrite fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
+	vmf->address, vmf->pgoff);
+	return VM_FAULT_NOPAGE;
+}
+
 
 static const struct vm_operations_struct my_vm_ops = 
 {
-    .fault = cxl_helper_fault,
+    .fault = cxl_dsm_fault_handler,
+	.pfn_mkwrite = cxl_dsm_mkwrite_handler
 };
-
 
 /**
  * Custom memory allocation and mapping function.
@@ -60,18 +67,19 @@ static const struct vm_operations_struct my_vm_ops =
  * @length: Length of memory to allocate and map.
  * @returns: The address of the allocated memory, or an error code.
  */
-SYSCALL_DEFINE2(cxl_alloc, char __user *, dax_device_path, unsigned long, len)
+SYSCALL_DEFINE2(cxl_alloc_dsm, char __user *, dax_device_path, unsigned long, len)
 {
     char message_buf[FILE_PATH_LENGTH] = {0};
 	int ret = strncpy_from_user(message_buf, dax_device_path, FILE_PATH_LENGTH);
 	if (ret < 0) return -EFAULT;
 	if (ret >= sizeof(message_buf) || ret == 0) return -EINVAL;
-	return __cxl_alloc(message_buf, len);
+	return __cxl_alloc_dsm(message_buf, len);
 }
 
-unsigned long __cxl_alloc(char *dax_device_path, unsigned long len) 
+unsigned long __cxl_alloc_dsm(char *dax_device_path, unsigned long len) 
 {
 	owner_pid = task_pid_nr(current);
+    //return 0; 
     unsigned long addr;
     const unsigned long prot  = PROT_READ | PROT_WRITE;
     const unsigned long flags = MAP_SHARED | MAP_ANONYMOUS;
@@ -79,6 +87,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 				VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE | VM_PFNMAP;
 	void *kern_buf;
 	struct vm_area_struct *vma;
+	//struct dax_device *cxl_dax_device = NULL;
 	pfn_t dax_pfn;
 	unsigned long populate = 0;
 	int ret;
@@ -118,6 +127,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 		* into that VMA, page by page.
 		
 	*/
+	//ret = remap_vmalloc_range(vma, kern_buf, 0);
 	pr_info("allocated pages on cxl dax: %d\n", ret);
 	mmap_write_unlock(current->mm);
 	

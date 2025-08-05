@@ -438,3 +438,4 @@
 553 common send_response sys_send_response
 554 common tcp_server_stop sys_tcp_server_stop
 555 common set_process_identification sys_set_process_identification
+556 common cxl_alloc_dsm sys_cxl_alloc_dsm
