@@ -64,7 +64,7 @@ int is_allottable(pid_t requestor_pid) {
 			port = 57580;
 		}
 	}
-	pr_info(THIS_MOD "host id: %s %d\n", address, port);
+
 	/*ownership checking here, also ask for permission if needed*/
 	if (owner->owner_pid <= 0)
 	{
@@ -170,7 +170,6 @@ EXPORT_SYMBOL(ask_for_permission);
 
 void set_host(char *host_id_string) {
 	strscpy(this_host, host_id_string, sizeof(this_host));
-	pr_info(THIS_MOD "set host id to: %s\n", this_host);
 }
 EXPORT_SYMBOL(set_host);
 
@@ -179,7 +178,6 @@ SYSCALL_DEFINE1(set_process_identification, char __user *, process_id)
 {
 	char message_buf[24] = {0};
 	int ret = strncpy_from_user(message_buf, process_id, sizeof(message_buf));
-	pr_info(THIS_MOD " host id from user: %s\n", message_buf);
 	if (ret < 0) return -EFAULT;
 	if (ret >= sizeof(message_buf) || ret == 0) return -EINVAL;
 	set_host(message_buf);
