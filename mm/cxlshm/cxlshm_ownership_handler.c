@@ -43,11 +43,14 @@ int is_allottable(pid_t requestor_pid) {
 	}
 	else
 	{
-		char *ip_4_addr_from_user = strsep(&this_host, ":");
+		char *temp_hostid_processing = (char *)kzalloc(sizeof(char) * strlen(this_host) + 1, GFP_KERNEL);
+		
+		strscpy(temp_hostid_processing, this_host, strlen(this_host) + 1);
+		char *ip_4_addr_from_user = strsep(&temp_hostid_processing, ":");
 		if (ip_4_addr_from_user != NULL) 
 		{
 			int port_from_user = 0;
-			int strtoint_ret = kstrtoint(this_host, 10, &port_from_user);
+			int strtoint_ret = kstrtoint(temp_hostid_processing, 10, &port_from_user);
 			if (strtoint_ret >= 0) 
 			{
 				strscpy(address, ip_4_addr_from_user, sizeof(address));
