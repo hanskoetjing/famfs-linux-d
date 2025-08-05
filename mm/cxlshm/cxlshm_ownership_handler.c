@@ -54,7 +54,7 @@ int is_allottable(pid_t requestor_pid) {
 			int strtoint_ret = kstrtoint(temp_hostid_processing, 10, &port_from_user);
 			if (strtoint_ret >= 0) 
 			{
-				strscpy(address, ip_4_addr_from_user, sizeof(address));
+				strscpy(address, ip_4_addr_from_user, sizeof(address) + 1);
 				port = port_from_user;
 			}
 		}
