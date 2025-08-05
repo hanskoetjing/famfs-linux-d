@@ -64,7 +64,7 @@ int is_allottable(pid_t requestor_pid) {
 			port = 57580;
 		}
 	}
-	pr_info(THIS_MOD "host id: %s %p\n", address, port);
+	pr_info(THIS_MOD "host id: %s %d\n", address, port);
 	/*ownership checking here, also ask for permission if needed*/
 	if (owner->owner_pid <= 0)
 	{
