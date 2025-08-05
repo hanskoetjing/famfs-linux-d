@@ -170,6 +170,7 @@ EXPORT_SYMBOL(ask_for_permission);
 
 void set_host(char *host_id_string) {
 	strscpy(this_host, host_id_string, sizeof(this_host));
+	pr_info(THIS_MOD "set host id to: %s\n", this_host);
 }
 EXPORT_SYMBOL(set_host);
 
