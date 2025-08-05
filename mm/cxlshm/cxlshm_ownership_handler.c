@@ -179,8 +179,10 @@ SYSCALL_DEFINE1(set_process_identification, char __user *, process_id)
 {
 	char message_buf[24] = {0};
 	int ret = strncpy_from_user(message_buf, process_id, sizeof(message_buf));
+	pr_info(THIS_MOD " host id from user: %s\n", message_buf);
 	if (ret < 0) return -EFAULT;
 	if (ret >= sizeof(message_buf) || ret == 0) return -EINVAL;
 	set_host(message_buf);
+	
 	return 0;
 }
