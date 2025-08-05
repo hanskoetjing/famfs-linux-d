@@ -12,6 +12,7 @@
 #include <linux/pid.h>
 #include <linux/pid_types.h>
 #include <linux/kthread.h>
+#include <linux/syscalls.h>
 
 #include <linux/cxlshm_msg.h>
 #include "../../drivers/dax/dax-private.h"
