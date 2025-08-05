@@ -187,7 +187,7 @@ int _tcp_client_start(char *ip_4_addr, int port) {
 	int ret = 0;
 
 	if (!client_socket) {
-		strscpy(client_ip_4_addr, ip_4_addr, sizeof(ip_4_addr) + 1);
+		strscpy(client_ip_4_addr, ip_4_addr, strlen(ip_4_addr) + 1);
 		client_port = port;
 		pr_info(THIS_MOD "connecting to: %s port %d\n", client_ip_4_addr, client_port);
 		ret = sock_create_kern(&init_net, AF_INET, SOCK_STREAM, IPPROTO_TCP, &client_socket);
