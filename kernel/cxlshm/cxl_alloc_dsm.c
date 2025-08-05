@@ -16,7 +16,6 @@
 #define THIS_MOD "cxl_alloc_dsm: "
 #define MAX_ALLOC 4 * 1024 * 1024
 
-struct dax_device *cxl_dax_device = NULL;
 extern pid_t owner_pid;
 
 unsigned long __cxl_alloc_dsm(char *dax_device_path, unsigned long len);
@@ -87,7 +86,6 @@ unsigned long __cxl_alloc_dsm(char *dax_device_path, unsigned long len)
 				VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE | VM_PFNMAP;
 	void *kern_buf;
 	struct vm_area_struct *vma;
-	//struct dax_device *cxl_dax_device = NULL;
 	pfn_t dax_pfn;
 	unsigned long populate = 0;
 	int ret;
