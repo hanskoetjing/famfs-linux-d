@@ -97,7 +97,7 @@ EXPORT_SYMBOL(is_allottable);
 void set_new_ownership(struct ownership **new_owner, char *address, int port) 
 {
 	(*new_owner)->owner_pid = task_pid_nr(current);
-	strscpy((*new_owner)->ip_4_addr, address, 16);
+	strscpy((*new_owner)->ip_4_addr, address, strlen(address) + 1);
 	(*new_owner)->port = port;
 	set_owner_info_on_mem((*new_owner));
 }
