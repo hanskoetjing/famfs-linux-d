@@ -238,7 +238,7 @@ vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot)
     ret = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pfn_dax);
 	pr_info(THIS_MOD "DEBUG: is backed by struct page? %d\n", pfn_t_has_page(pfn_dax));
     pr_info(THIS_MOD "got pfn at: 0x%llx\n", pfn_dax.val);
-    ret = vmf_insert_pfn(vmf->vma, vmf->address, pfn_dax.val);
+    ret = vmf_insert_pfn_prot(vmf->vma, vmf->address, pfn_dax.val, pgprot);
     pr_info(THIS_MOD "insert pfn to vmf done\n");
     return ret;
 }

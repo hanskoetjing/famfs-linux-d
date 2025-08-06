@@ -52,7 +52,7 @@ static vm_fault_t cxl_dsm_mkwrite_handler(struct vm_fault *vmf)
 	vmf->address, vmf->pgoff);
 	vmfault_handled = handle_fault_on_cxldaxdev_prot(vmf, PAGE_SHARED);
 	return vmfault_handled;
-	return VM_FAULT_NOPAGE;
+	//return VM_FAULT_NOPAGE;
 }
 
 
