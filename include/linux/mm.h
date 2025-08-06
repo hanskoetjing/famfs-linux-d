@@ -313,6 +313,10 @@ extern unsigned int kobjsize(const void *objp);
 #define VM_NOHUGEPAGE	0x40000000	/* MADV_NOHUGEPAGE marked this vma */
 #define VM_MERGEABLE	0x80000000	/* KSM may merge identical pages */
 
+/*add mapping for cxlshm. 64-bit only*/
+#define VM_CXLSHM       0x100000000 /* for mapping on cxl dax mem */
+#define VM_CXLDSM       0x200000000 /* for mapping on cxl dax dsm */
+
 #ifdef CONFIG_ARCH_USES_HIGH_VMA_FLAGS
 #define VM_HIGH_ARCH_BIT_0	32	/* bit only usable on 64-bit architectures */
 #define VM_HIGH_ARCH_BIT_1	33	/* bit only usable on 64-bit architectures */

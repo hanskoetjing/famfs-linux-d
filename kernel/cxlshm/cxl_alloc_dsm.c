@@ -85,7 +85,7 @@ unsigned long __cxl_alloc_dsm(char *dax_device_path, unsigned long len)
     //return 0; 
     unsigned long addr;
     const unsigned long prot  = PROT_READ | PROT_WRITE;
-    const unsigned long flags = MAP_SHARED | MAP_ANONYMOUS;
+    const unsigned long flags = MAP_SHARED | MAP_ANONYMOUS | MAP_CXLDSM;
 	vm_flags_t vm_flags = VM_IO | VM_DONTEXPAND | VM_DONTDUMP | VM_USERMAP |
 				VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE | VM_MIXEDMAP;
 	void *kern_buf;
