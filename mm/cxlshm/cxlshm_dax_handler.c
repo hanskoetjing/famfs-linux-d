@@ -8,6 +8,10 @@
 #include <linux/namei.h>
 #include <linux/path.h>
 #include <linux/sprintf.h>
+/*to check pages*/
+#include <linux/pfn_t.h>
+#include <asm-generic/memory_model.h>
+#include <linux/mm_types.h>
 
 #include <linux/dax.h>
 #include "../../drivers/dax/dax-private.h"
@@ -33,6 +37,7 @@ vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf);
 void get_current_device_path(char **dev_path);
 int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
+vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot);
 
 void get_current_device_path(char **dev_path) 
 {
@@ -78,8 +83,21 @@ int read_owner_info_on_mem(char *device_path_param)
     ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
     end_pfn = begin_pfn;
 	end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
-	pr_info(THIS_MOD "read owner info on 0x%llx to 0x%llx\n", begin_pfn.val, end_pfn.val);
-	pr_info(THIS_MOD "read owner info with kaddr 0x%p\n", alloc_table_start);
+	//pr_info(THIS_MOD "read owner info on 0x%llx to 0x%llx\n", begin_pfn.val, end_pfn.val);
+	//pr_info(THIS_MOD "read owner info with kaddr 0x%p\n", alloc_table_start);
+	void *alloc_table_end = alloc_table_start + FAT_OFFSET - 1;
+	char *test = (char *)alloc_table_end;
+	char str_to_copy[64] = "qwertyuiopasdfghjklzxcvbnmmnbvcxzlkjhgfdsapoiuytrewq12345678901\0";
+	memcpy(alloc_table_end, str_to_copy, 64);
+	pr_info(THIS_MOD "DEBUG: test alloc at end %s\n", test);
+	struct page *new_page = alloc_page(GFP_KERNEL);
+	void *dest_addr = page_address(new_page);
+	memcpy(dest_addr, alloc_table_end, PAGE_SIZE);
+	pr_info(THIS_MOD "DEBUG: copied data %s\n", (char *)dest_addr);
+	char str_to_copy1[64] = "babiksuiopasdfghjklzxcvbnmmnbvcxzlkjhgfdsapoiuskibab12345678901\0";
+	memcpy(dest_addr, str_to_copy1, 64);
+	pr_info(THIS_MOD "DEBUG: original str on mem %s\n", test);
+	pr_info(THIS_MOD "DEBUG: modified str on page %s\n", (char *)dest_addr);
 	return ret;
 }
 
@@ -174,6 +192,7 @@ vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf) {
     pgoff_t dax_pgoff = vmf->pgoff + FAT_OFFSET;
     pr_info(THIS_MOD "dax area page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
+	
     if (!cxl_dax_device) {
         get_cxl_dax_dev(device_path);
         if (!cxl_dax_device)
@@ -185,9 +204,42 @@ vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf) {
             return -ENXIO;
     }
     ret = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pfn_dax);
+	pr_info(THIS_MOD "DEBUG: is backed by struct page? %d\n", pfn_t_has_page(pfn_dax));
     pr_info(THIS_MOD "got pfn at: 0x%llx\n", pfn_dax.val);
     ret = vmf_insert_pfn(vmf->vma, vmf->address, pfn_dax.val);
     pr_info(THIS_MOD "insert pfn to vmf done\n");
     return ret;
 }
 EXPORT_SYMBOL(handle_fault_on_cxldaxdev);
+
+
+//fault handler. owner checking is handled in other c source
+vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot) {
+    int ret = 0;
+    struct vm_area_struct *vma = vmf->vma;
+    unsigned long size = vma->vm_end - vma->vm_start;
+    long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
+    pfn_t pfn_dax;
+    void *kaddr = NULL;
+    pgoff_t dax_pgoff = vmf->pgoff + FAT_OFFSET;
+    pr_info(THIS_MOD "dax area page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
+		vmf->address, vmf->pgoff);
+	
+    if (!cxl_dax_device) {
+        get_cxl_dax_dev(device_path);
+        if (!cxl_dax_device)
+            return -ENXIO;
+    }
+    if (!dax_alive(cxl_dax_device)) {
+        run_dax(cxl_dax_device);
+        if (!dax_alive(cxl_dax_device))
+            return -ENXIO;
+    }
+    ret = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pfn_dax);
+	pr_info(THIS_MOD "DEBUG: is backed by struct page? %d\n", pfn_t_has_page(pfn_dax));
+    pr_info(THIS_MOD "got pfn at: 0x%llx\n", pfn_dax.val);
+    ret = vmf_insert_pfn(vmf->vma, vmf->address, pfn_dax.val);
+    pr_info(THIS_MOD "insert pfn to vmf done\n");
+    return ret;
+}
+EXPORT_SYMBOL(handle_fault_on_cxldaxdev_prot);

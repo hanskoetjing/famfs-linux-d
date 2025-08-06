@@ -30,12 +30,12 @@ static vm_fault_t cxl_dsm_fault_handler(struct vm_fault *vmf) {
 
 	is_allottable_to_this_task = is_allottable(task_pid_nr(current));
 
-	if(vmf->vma->vm_flags & MAP_CXLSHM)
+	if(vmf->vma->vm_flags & MAP_CXLDSM)
 		pr_info(THIS_MOD "memory on cxl device!\n");
 
 	if (is_allottable_to_this_task > 0) 
 	{
-		vmfault_handled = handle_fault_on_cxldaxdev(vmf);
+		vmfault_handled = handle_fault_on_cxldaxdev_prot(vmf, PAGE_READONLY);
 		return vmfault_handled;
 	} 
 	else 
@@ -47,8 +47,11 @@ static vm_fault_t cxl_dsm_fault_handler(struct vm_fault *vmf) {
 
 static vm_fault_t cxl_dsm_mkwrite_handler(struct vm_fault *vmf) 
 {
+	vm_fault_t vmfault_handled;
 	pr_info(THIS_MOD "mkwrite fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 	vmf->address, vmf->pgoff);
+	vmfault_handled = handle_fault_on_cxldaxdev_prot(vmf, PAGE_SHARED);
+	return vmfault_handled;
 	return VM_FAULT_NOPAGE;
 }
 
@@ -83,7 +86,8 @@ unsigned long __cxl_alloc_dsm(char *dax_device_path, unsigned long len)
     const unsigned long prot  = PROT_READ | PROT_WRITE;
     const unsigned long flags = MAP_SHARED | MAP_ANONYMOUS;
 	vm_flags_t vm_flags = VM_IO | VM_DONTEXPAND | VM_DONTDUMP | VM_USERMAP |
-				VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE | VM_MIXEDMAP;
+				VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE | VM_MIXEDMAP|
+				VM_CXLDSM;
 	void *kern_buf;
 	struct vm_area_struct *vma;
 	pfn_t dax_pfn;
@@ -125,7 +129,6 @@ unsigned long __cxl_alloc_dsm(char *dax_device_path, unsigned long len)
 		* into that VMA, page by page.
 		
 	*/
-	//ret = remap_vmalloc_range(vma, kern_buf, 0);
 	pr_info("allocated pages on cxl dax: %d\n", ret);
 	mmap_write_unlock(current->mm);
 	

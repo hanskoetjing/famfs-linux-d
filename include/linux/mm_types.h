@@ -169,6 +169,8 @@ struct page {
 	/* Usage count. *DO NOT USE DIRECTLY*. See page_ref.h */
 	atomic_t _refcount;
 
+	unsigned long long dax_pfn;
+
 #ifdef CONFIG_MEMCG
 	unsigned long memcg_data;
 #endif

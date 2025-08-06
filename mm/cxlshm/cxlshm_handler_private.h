@@ -35,6 +35,7 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 void get_current_device_path(char **dev_path);
 int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
+vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot);
 
 
 #endif
