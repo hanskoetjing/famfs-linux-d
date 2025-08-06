@@ -32,7 +32,7 @@ static vm_fault_t cxl_helper_fault(struct vm_fault *vmf)
 	is_allottable_to_this_task = is_allottable(task_pid_nr(current));
 
 	if(vmf->vma->vm_flags & MAP_CXLSHM)
-		pr_info(THIS_MOD "memory on cxl device!\n");
+		pr_info(THIS_MOD "cxl shm memory on cxl device!\n");
 
 	if (is_allottable_to_this_task > 0) 
 	{

@@ -31,8 +31,8 @@ static vm_fault_t cxl_dsm_fault_handler(struct vm_fault *vmf) {
 	is_allottable_to_this_task = 1;
 	// /is_allottable_to_this_task = is_allottable(task_pid_nr(current));
 
-	if(vmf->vma->vm_flags & MAP_CXLDSM)
-		pr_info(THIS_MOD "memory on cxl device!\n");
+	if(vmf->vma->vm_flags & VM_CXLDSM)
+		pr_info(THIS_MOD "dsm memory on cxl device!\n");
 
 	if (is_allottable_to_this_task > 0) 
 	{
