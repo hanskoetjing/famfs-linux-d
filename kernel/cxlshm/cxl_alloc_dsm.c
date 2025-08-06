@@ -27,8 +27,9 @@ static vm_fault_t cxl_dsm_fault_handler(struct vm_fault *vmf) {
 	pr_info(THIS_MOD "page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
 	vm_fault_t vmfault_handled;
-
-	is_allottable_to_this_task = is_allottable(task_pid_nr(current));
+	
+	is_allottable_to_this_task = 1;
+	// /is_allottable_to_this_task = is_allottable(task_pid_nr(current));
 
 	if(vmf->vma->vm_flags & MAP_CXLDSM)
 		pr_info(THIS_MOD "memory on cxl device!\n");
@@ -137,7 +138,7 @@ unsigned long __cxl_alloc_dsm(char *dax_device_path, unsigned long len)
 		vm_munmap(addr, len);
 		return ret;
 	}
-
+	pr_info("allocation done\n");
 	/* success → return user‑space VA */
 	return addr;
 }

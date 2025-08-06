@@ -85,19 +85,6 @@ int read_owner_info_on_mem(char *device_path_param)
 	end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
 	//pr_info(THIS_MOD "read owner info on 0x%llx to 0x%llx\n", begin_pfn.val, end_pfn.val);
 	//pr_info(THIS_MOD "read owner info with kaddr 0x%p\n", alloc_table_start);
-	void *alloc_table_end = alloc_table_start + FAT_OFFSET - 1;
-	char *test = (char *)alloc_table_end;
-	char str_to_copy[64] = "qwertyuiopasdfghjklzxcvbnmmnbvcxzlkjhgfdsapoiuytrewq12345678901\0";
-	memcpy(alloc_table_end, str_to_copy, 64);
-	pr_info(THIS_MOD "DEBUG: test alloc at end %s\n", test);
-	struct page *new_page = alloc_page(GFP_KERNEL);
-	void *dest_addr = page_address(new_page);
-	memcpy(dest_addr, alloc_table_end, PAGE_SIZE);
-	pr_info(THIS_MOD "DEBUG: copied data %s\n", (char *)dest_addr);
-	char str_to_copy1[64] = "babiksuiopasdfghjklzxcvbnmmnbvcxzlkjhgfdsapoiuskibab12345678901\0";
-	memcpy(dest_addr, str_to_copy1, 64);
-	pr_info(THIS_MOD "DEBUG: original str on mem %s\n", test);
-	pr_info(THIS_MOD "DEBUG: modified str on page %s\n", (char *)dest_addr);
 	return ret;
 }
 
