@@ -101,7 +101,7 @@ int flush_mem_task(pid_t pid)
             unsigned long vm_from_mem = owner_on_mem->vm_start;
             pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", pid_on_mem, owner_on_mem->vm_start);
             mas_for_each(&mas, vma, ULONG_MAX) {
-                if (vma->vm_flags & MAP_CXLSHM) 
+                if (vma->vm_flags & VM_CXLSHM) 
                 {
                     this_vma = vma;
                     pr_info(THIS_MOD "found vma addr: 0x%lx\n", vma->vm_start);
