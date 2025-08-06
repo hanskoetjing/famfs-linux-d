@@ -78,6 +78,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 	vm_flags_t vm_flags = VM_IO | VM_DONTEXPAND | VM_DONTDUMP | VM_USERMAP |
 				VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE | VM_MIXEDMAP|
 				VM_CXLSHM;
+	pr_info(THIS_MOD "flags: 0x%lx\n", vm_flags);
 	void *kern_buf;
 	struct vm_area_struct *vma;
 	pfn_t dax_pfn;
@@ -104,7 +105,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 	ret = alloc_mem_on_devdax(dax_device_path, len, &kern_buf, &dax_pfn);
 	addr = do_mmap(NULL, 0, len, prot, flags, vm_flags,
 					0 /* pgoff */, &populate /* populate */, NULL /* uf */);
-	pr_info("mmap-ed address: 0x%lx\n", addr);
+	pr_info(THIS_MOD "mmap-ed address: 0x%lx\n", addr);
 
 	/* find the VMA we just created */
 	vma = find_vma(current->mm, addr);
@@ -119,7 +120,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 		* into that VMA, page by page.
 		
 	*/
-	pr_info("allocated pages on cxl dax: %d\n", ret);
+	pr_info(THIS_MOD "allocated pages on cxl dax: %d\n", ret);
 	mmap_write_unlock(current->mm);
 	
 	if (ret < 0) {
