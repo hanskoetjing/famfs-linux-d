@@ -261,9 +261,9 @@ int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *add
 		pr_info(THIS_MOD "invalidate vma of %d\n", existing_owner);
 		get_owner_info_on_mem(&owner);
 		char pid_to_send[64] = {0};
-		snprintf(pid_to_send, sizeof(pid_to_send), "PID:%d:PFN:%lx", owner->owner_pid, pfn_from_vmf);
+		snprintf(pid_to_send, sizeof(pid_to_send), "PFN:%lx:PID:%d", pfn_from_vmf, owner->owner_pid);
         pr_info(THIS_MOD "message: %s\n", pid_to_send);
-		/*
+		
 		ret = _tcp_client_start(owner->ip_4_addr, owner->port);
 		if (ret < 0) 
 		{
@@ -300,7 +300,7 @@ int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *add
 			}
 		}
 		_tcp_client_stop();
-		*/
+		
 		return requestor_pid;
 	}
 	else
