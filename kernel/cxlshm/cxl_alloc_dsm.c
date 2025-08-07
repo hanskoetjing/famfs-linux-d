@@ -39,8 +39,18 @@ static vm_fault_t cxl_dsm_mkwrite_handler(struct vm_fault *vmf)
 	vm_fault_t vmfault_handled;
 	pr_info(THIS_MOD "mkwrite fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 	vmf->address, vmf->pgoff);
-	vmfault_handled = handle_fault_on_cxldaxdev_mkwrite(vmf);
-	return vmfault_handled;
+	
+	writable_by_this_process = is_allottable_page(task_pid_nr(current), vmf);
+
+	if (writable_by_this_process)
+	{
+		vmfault_handled = handle_fault_on_cxldaxdev_mkwrite(vmf);
+		return vmfault_handled;
+	}
+	else
+	{
+		return VM_FAULT_RETRY;
+	}
 	//return VM_FAULT_NOPAGE;
 }
 
