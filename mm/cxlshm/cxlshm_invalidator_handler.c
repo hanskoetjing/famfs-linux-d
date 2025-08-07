@@ -207,6 +207,7 @@ static int __init cxlshm_invalidator_init(void)
     set_ownership_completion(&ownership_transfer_arrival_var);
     set_page_ownership_completion(&page_ownership_transfer_var);
     invalidator_thread = kthread_run(invalidate_mem_area, (void *)data, "invalidate_mem_area");
+    page_invalidator_thread = kthread_run(invalidate_mem_page, (void *)data, "invalidate_mem_page");
 
 	//init done
 	pr_info(THIS_MOD "loaded\n");
@@ -220,6 +221,10 @@ static void __exit cxlshm_invalidator_exit(void)
     if (task_is_running(invalidator_thread)) {
         pr_info(THIS_MOD "stop invalidator thread\n"); 
         kthread_stop(invalidator_thread);
+    }
+    if (task_is_running(page_invalidator_thread)) {
+        pr_info(THIS_MOD "stop page invalidator thread\n"); 
+        kthread_stop(page_invalidator_thread);
     }
 	//exit done
 	pr_info(THIS_MOD ": unloaded\n"); 
