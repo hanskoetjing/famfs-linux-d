@@ -30,6 +30,7 @@ int is_allottable(pid_t requestor_pid);
 int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port);
 void set_new_ownership(struct ownership **new_owner, char *address, int port);
 int is_allottable_page(pid_t requestor_pid, struct vm_fault *vmf);
+int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *address, int port, struct vm_fault *vmf);
 
 int is_allottable(pid_t requestor_pid) {
 	struct ownership *owner;
@@ -175,11 +176,6 @@ int is_allottable_page(pid_t requestor_pid, struct vm_fault *vmf)
 	struct ownership *owner;
 	unsigned long virt_addr = vmf->address;
 	pr_info(THIS_MOD "check if pfn 0x%llx can be allocated to %d\n", virt_addr, requestor_pid);
-	if (vmf->pte)
-	{
-		pr_info(THIS_MOD "there's a pte here 0x%lx\n", vmf->pte->pte);
-		pr_info(THIS_MOD "pfn from pte 0x%lx\n", pte_pfn(*(vmf->pte)));
-	}
 	get_owner_info_on_mem(&owner);
 	char address[16] = {0};
 	int port = 0;
@@ -236,14 +232,84 @@ int is_allottable_page(pid_t requestor_pid, struct vm_fault *vmf)
 		{
 			/*to be checked later, but return 1 for now*/
 			pr_info(THIS_MOD "owned by the other process, possibly in other host\n");
-			return requestor_pid; /*temporary, just make sure it goes here*/
-			//return ask_for_permission(owner->owner_pid, requestor_pid, address, port);
+			return ask_for_permission_page(owner->owner_pid, requestor_pid, address, port, vmf);
 		}
 	}
 }
 EXPORT_SYMBOL(is_allottable_page);
 
-
+int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *address, int port, struct vm_fault *vmf) {
+	pr_info(THIS_MOD "ask_for_permission_page function here %d\n", requestor_pid);
+	struct ownership *owner;
+	int ret = 0;
+	unsigned long pfn_from_vmf = 0;
+	if (vmf->pte)
+	{
+		pfn_from_vmf = pte_pfn(*(vmf->pte));
+		pr_info(THIS_MOD "got pfn 0x%lx from pte 0x%lx\n", pfn_from_vmf, vmf->pte->pte);
+	}
+	/*the messaging part will go here, but just return 1 for now */
+	if (existing_owner <= 0)
+	{
+		pr_info(THIS_MOD "set ownership on memory to %d\n", requestor_pid);
+		get_owner_info_on_mem(&owner);
+		set_new_ownership(&owner, address, port);
+		return requestor_pid;
+	}
+	else if (existing_owner > 0)
+	{
+		pr_info(THIS_MOD "invalidate vma of %d\n", existing_owner);
+		get_owner_info_on_mem(&owner);
+		char pid_to_send[64] = {0};
+		snprintf(pid_to_send, 15, "PID:%d:PFN:%lx", owner->owner_pid, pfn_from_vmf);
+        pr_info(THIS_MOD "message: %s\n", pid_to_send);
+		/*
+		ret = _tcp_client_start(owner->ip_4_addr, owner->port);
+		if (ret < 0) 
+		{
+			pr_info(THIS_MOD "can't connect to server %s %d\n", owner->ip_4_addr, owner->port);
+			set_new_ownership(&owner, address, port);//if can't connect, just take over
+		}
+		else
+		{
+			_send_message(pid_to_send);
+			char received_copy[MAX_BUFFER_NET] = {0};
+			unsigned long timeout = msecs_to_jiffies(MAX_TIMEOUT_MSEC);
+			long completion_ret_val = wait_for_completion_interruptible_timeout(&is_complete, timeout);
+			if (completion_ret_val > 0) {
+				spin_lock(&client_lock);
+				strscpy(received_copy, response_received, sizeof(response_received));
+				memset(response_received, 0, sizeof(response_received));
+				spin_unlock(&client_lock);
+				if (strncmp(received_copy, "DONE", 4) == 0) {
+					pr_info(THIS_MOD "ownership transfer completed\n");
+					set_new_ownership(&owner, address, port);
+					ret = requestor_pid;
+				} else {
+					pr_info(THIS_MOD "not a completion message, maybe handled later\n");
+					return -EINVAL;
+				}
+			} else if (completion_ret_val == 0) {
+				pr_info(THIS_MOD "timeout waiting for response\n");
+				//automatically take over ownership if timeout occurred
+				set_new_ownership(&owner, address, port);
+				ret = 1;
+			} else {
+				pr_info(THIS_MOD "interrupted\n");
+				ret = -EAGAIN;
+			}
+		}
+		_tcp_client_stop();
+		*/
+		return requestor_pid;
+	}
+	else
+	{
+		return -EINVAL;
+	}
+	return ret;
+}
+EXPORT_SYMBOL(ask_for_permission_page);
 
 
 
