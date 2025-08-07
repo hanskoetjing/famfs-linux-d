@@ -24,9 +24,10 @@
 static struct task_struct *invalidator_thread;
 static struct task_struct *page_invalidator_thread;
 DECLARE_COMPLETION(ownership_transfer_arrival_var);
-DECLARE_COMPLETION(page_ownership_transfer);
+DECLARE_COMPLETION(page_ownership_transfer_var);
 
 int invalidate_mem_area(void *data);
+int invalidate_mem_page(void *data);
 struct task_struct *get_task_from_int_pid(pid_t pid);
 int flush_mem_task(pid_t pid);
 
@@ -204,7 +205,7 @@ static int __init cxlshm_invalidator_init(void)
 {	
     void *data = NULL;
     set_ownership_completion(&ownership_transfer_arrival_var);
-    set_page_ownership_completion(&page_ownership_transfer);
+    set_page_ownership_completion(&page_ownership_transfer_var);
     invalidator_thread = kthread_run(invalidate_mem_area, (void *)data, "invalidate_mem_area");
 
 	//init done
