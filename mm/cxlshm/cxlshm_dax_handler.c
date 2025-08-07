@@ -127,9 +127,12 @@ EXPORT_SYMBOL(set_owner_info_on_mem);
 
 int get_cxl_dax_dev(char *device_path_param) 
 {
-	int char_copied_length = strscpy(device_path, device_path_param, FILE_PATH_LENGTH);
+	int char_copied_length = -1;
+	if (strlen(device_path) != 0) {
+		char_copied_length = strscpy(device_path, device_path_param, FILE_PATH_LENGTH);
+	}
 	if (char_copied_length < 0) {
-		strscpy(device_path, DEFAULT_PATH, FILE_PATH_LENGTH);
+		char_copied_length = strscpy(device_path, DEFAULT_PATH, FILE_PATH_LENGTH);
 	}
 	int lookup_result = lookup_daxdev(device_path, &dax_dev_num);
     int ret = 0;
