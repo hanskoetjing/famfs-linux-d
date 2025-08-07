@@ -12,6 +12,7 @@
 #include <linux/pfn_t.h>
 #include <asm-generic/memory_model.h>
 #include <linux/mm_types.h>
+#include <asm-generic/int-ll64.h>
 
 #include <linux/dax.h>
 #include "../../drivers/dax/dax-private.h"
@@ -25,7 +26,7 @@
 static char device_path[FILE_PATH_LENGTH] = {0};
 static struct dax_device *cxl_dax_device = NULL;
 static dev_t dax_dev_num;
-static pfn_t begin_pfn, end_pfn;
+static pfn_t begin_pfn, end_pfn, start_data_pfn;
 static void *alloc_table_start = NULL;
 extern pid_t owner_pid;
 
@@ -83,8 +84,7 @@ int read_owner_info_on_mem(char *device_path_param)
     ret = dax_direct_access(cxl_dax_device, 0, FAT_OFFSET, DAX_ACCESS, &alloc_table_start, &begin_pfn);
     end_pfn = begin_pfn;
 	end_pfn.val = end_pfn.val + FAT_OFFSET - 1;
-	//pr_info(THIS_MOD "read owner info on 0x%llx to 0x%llx\n", begin_pfn.val, end_pfn.val);
-	//pr_info(THIS_MOD "read owner info with kaddr 0x%p\n", alloc_table_start);
+	start_data_pfn.val = end_pfn.val + FAT_OFFSET + 1;
 	return ret;
 }
 
@@ -174,26 +174,14 @@ vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf) {
     struct vm_area_struct *vma = vmf->vma;
     unsigned long size = vma->vm_end - vma->vm_start;
     long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
-    pfn_t pfn_dax;
     void *kaddr = NULL;
-    pgoff_t dax_pgoff = vmf->pgoff + FAT_OFFSET;
+    pgoff_t dax_pgoff = vmf->pgoff;
     pr_info(THIS_MOD "dax area page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
-	
-    if (!cxl_dax_device) {
-        get_cxl_dax_dev(device_path);
-        if (!cxl_dax_device)
-            return -ENXIO;
-    }
-    if (!dax_alive(cxl_dax_device)) {
-        run_dax(cxl_dax_device);
-        if (!dax_alive(cxl_dax_device))
-            return -ENXIO;
-    }
-    ret = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pfn_dax);
-	pr_info(THIS_MOD "DEBUG: is backed by struct page? %d\n", pfn_t_has_page(pfn_dax));
-    pr_info(THIS_MOD "got pfn at: 0x%llx\n", pfn_dax.val);
-    ret = vmf_insert_pfn(vmf->vma, vmf->address, pfn_dax.val);
+	pr_info(THIS_MOD "DEBUG: is backed by struct page? %d\n", pfn_t_has_page(start_data_pfn));
+	start_data_pfn.val += (u64)dax_pgoff;
+    pr_info(THIS_MOD "got pfn at: 0x%llx\n", start_data_pfn.val);
+    ret = vmf_insert_pfn(vmf->vma, vmf->address, start_data_pfn.val);
     pr_info(THIS_MOD "insert pfn to vmf done\n");
     return ret;
 }
@@ -206,26 +194,14 @@ vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot)
     struct vm_area_struct *vma = vmf->vma;
     unsigned long size = vma->vm_end - vma->vm_start;
     long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
-    pfn_t pfn_dax;
     void *kaddr = NULL;
-    pgoff_t dax_pgoff = vmf->pgoff + FAT_OFFSET;
+    pgoff_t dax_pgoff = vmf->pgoff;
     pr_info(THIS_MOD "dax area page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
-	
-    if (!cxl_dax_device) {
-        get_cxl_dax_dev(device_path);
-        if (!cxl_dax_device)
-            return -ENXIO;
-    }
-    if (!dax_alive(cxl_dax_device)) {
-        run_dax(cxl_dax_device);
-        if (!dax_alive(cxl_dax_device))
-            return -ENXIO;
-    }
-    ret = dax_direct_access(cxl_dax_device, dax_pgoff, nr_of_pages, DAX_ACCESS, &kaddr, &pfn_dax);
-	pr_info(THIS_MOD "DEBUG: is backed by struct page? %d\n", pfn_t_has_page(pfn_dax));
-    pr_info(THIS_MOD "got pfn at: 0x%llx\n", pfn_dax.val);
-    ret = vmf_insert_pfn_prot(vmf->vma, vmf->address, pfn_dax.val, pgprot);
+	pr_info(THIS_MOD "DEBUG: is backed by struct page? %d\n", pfn_t_has_page(start_data_pfn));
+	start_data_pfn.val += (u64)dax_pgoff;
+    pr_info(THIS_MOD "got pfn at: 0x%llx\n", start_data_pfn.val);
+    ret = vmf_insert_pfn_prot(vmf->vma, vmf->address, start_data_pfn.val, pgprot);
     pr_info(THIS_MOD "insert pfn to vmf done\n");
     return ret;
 }
