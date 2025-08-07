@@ -213,7 +213,11 @@ vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf) {
     pgoff_t dax_pgoff = vmf->pgoff;
     pr_info(THIS_MOD "dax area write fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
-    ret = vmf_insert_mixed_mkwrite(vmf->vma, vmf->address, start_data_pfn);
+	pte_t pte_from_vmf = *(vmf->pte);
+	unsigned long pfn_from_vmf = pte_pfn(pte_from_vmf);
+	pfn_t pfn_to_insert;
+	pfn_to_insert.val = pfn_from_vmf;
+    ret = vmf_insert_mixed_mkwrite(vmf->vma, vmf->address, pfn_to_insert);
     pr_info(THIS_MOD "insert pfn as writable to vmf done\n");
     return VM_FAULT_NOPAGE;
 }
