@@ -29,7 +29,7 @@ void set_host(char *host_id_string);
 int is_allottable(pid_t requestor_pid);
 int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port);
 void set_new_ownership(struct ownership **new_owner, char *address, int port);
-int is_allottable_page(pid_t requestor_pid, u64 pfn_address)
+int is_allottable_page(pid_t requestor_pid, u64 pfn_address);
 
 int is_allottable(pid_t requestor_pid) {
 	struct ownership *owner;
@@ -170,7 +170,8 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 }
 EXPORT_SYMBOL(ask_for_permission);
 
-int is_allottable_page(pid_t requestor_pid, u64 pfn_address) {
+int is_allottable_page(pid_t requestor_pid, u64 pfn_address) 
+{
 	struct ownership *owner;
 	pr_info(THIS_MOD "check if pfn 0x%llx can be allocated to %d\n", pfn_address, requestor_pid);
 	get_owner_info_on_mem(&owner);
