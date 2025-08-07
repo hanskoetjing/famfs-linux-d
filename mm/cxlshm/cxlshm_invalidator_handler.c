@@ -22,7 +22,9 @@
 #define THIS_MOD "cxlshm_invalidator_internal: "
 
 static struct task_struct *invalidator_thread;
+static struct task_struct *page_invalidator_thread;
 DECLARE_COMPLETION(ownership_transfer_arrival_var);
+DECLARE_COMPLETION(page_ownership_transfer);
 
 int invalidate_mem_area(void *data);
 struct task_struct *get_task_from_int_pid(pid_t pid);
@@ -56,8 +58,8 @@ int invalidate_mem_area(void *data)
                     pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", received_copy, ret);
                 }
                 ret = _send_response("DONE");
-                reinit_completion(&ownership_transfer_arrival_var);
             }
+            reinit_completion(&ownership_transfer_arrival_var);
         } 
         else 
         {
@@ -65,6 +67,67 @@ int invalidate_mem_area(void *data)
             return -EINTR;
         }
     }
+    kfree(received_copy);
+    pr_info(THIS_MOD "thread returns\n");
+    return ret;
+}
+
+int invalidate_mem_page(void *data) 
+{
+    int ret = 0;
+    char *received_copy = kzalloc(MAX_BUFFER_NET * sizeof(char), GFP_NOWAIT); //using nowait as this is IO
+    memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
+    while(!kthread_should_stop()) 
+    {
+        long completion_ret_val = wait_for_completion_interruptible(&page_ownership_transfer);
+        if (completion_ret_val >= 0) 
+        {
+            spin_lock(&ctr_lock);
+            strscpy(received_copy, ownership_transfer_message, sizeof(received_copy));
+            memset(ownership_transfer_message, 0, sizeof(ownership_transfer_message));
+            spin_unlock(&ctr_lock);
+            if (strncmp(received_copy, "PFN:", 4) == 0) 
+            {
+                strsep(&received_copy, ":");
+                char *pid_str = strsep(&received_copy, ":");
+                strsep(&received_copy, ":");
+                char *pfn_str = strsep(&received_copy, ":");
+                pid_t pid_received = 0;
+                int ret = kstrtoint(pid_str, 10, &pid_received);
+                if (ret < 0)
+                {
+                    pid_received = 0;
+                    pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", pid_str, ret);
+                }
+                u64 pfn_received = 0;
+                ret = kstrtoull(pfn_str, 16, pfn_received);
+                if (ret < 0)
+                {
+                    pfn_received = 0;
+                    pr_info(THIS_MOD "failed to process PFN: %s, returned: %d\n", pfn_str, ret);
+                }
+                pfn_t pfn_to_invalidate;
+                pfn_to_invalidate.val = pfn_received;
+                pr_info(THIS_MOD "received pid %d pfn 0x%llx\n", pid_received, pfn_received);
+                if (ret >= 0) 
+                {
+                    //flush_mem_task(pid_received);
+                } 
+                else 
+                {
+                    
+                }
+                ret = _send_response("DONE");
+            }
+            reinit_completion(&ownership_transfer_arrival_var);
+        } 
+        else 
+        {
+            pr_info(THIS_MOD "interrupted\n");
+            return -EINTR;
+        }
+    }
+    kfree(received_copy);
     pr_info(THIS_MOD "thread returns\n");
     return ret;
 }
@@ -142,6 +205,7 @@ static int __init cxlshm_invalidator_init(void)
 {	
     void *data = NULL;
     set_ownership_completion(&ownership_transfer_arrival_var);
+    set_page_ownership_completion(&page_ownership_transfer);
     invalidator_thread = kthread_run(invalidate_mem_area, (void *)data, "invalidate_mem_area");
 
 	//init done
@@ -152,6 +216,7 @@ static int __init cxlshm_invalidator_init(void)
 static void __exit cxlshm_invalidator_exit(void) 
 {
     set_ownership_completion(NULL);
+    set_page_ownership_completion(NULL);
     if (task_is_running(invalidator_thread)) {
         pr_info(THIS_MOD "stop invalidator thread\n"); 
         kthread_stop(invalidator_thread);

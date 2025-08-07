@@ -17,6 +17,7 @@ int _tcp_server_start(void);
 int _tcp_server_stop(void);
 void set_port(int port_param);
 void set_ownership_completion(struct completion *param);
+void set_page_ownership_completion(struct completion *param) ;
 int _send_response(char *response_message);
 
 //client side

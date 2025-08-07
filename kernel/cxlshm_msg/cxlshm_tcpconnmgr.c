@@ -20,6 +20,7 @@ EXPORT_SYMBOL(client_lock);
 DECLARE_COMPLETION(is_complete);
 EXPORT_SYMBOL(is_complete);
 struct completion *ownership_transfer_arrived = NULL;
+struct completion *page_ownership_transfer = NULL;
 static struct socket *server_socket, *connected_client_socket, *client_socket;
 static struct sockaddr_in sin, client_sockaddr;
 static struct task_struct *acceptor_thread, *response_acceptor_thread;
@@ -38,6 +39,7 @@ int _tcp_server_start(void);
 int _tcp_server_stop(void);
 void set_port(int port_param);
 void set_ownership_completion(struct completion *param);
+void set_page_ownership_completion(struct completion *param);
 int _send_response(char *response_message);
 
 int _tcp_client_start(char *ip_4_addr, int port);
@@ -55,6 +57,13 @@ EXPORT_SYMBOL(set_port);
 void set_ownership_completion(struct completion *param) {
 	spin_lock(&ctr_lock);
 	ownership_transfer_arrived = param;
+	spin_unlock(&ctr_lock);
+}
+EXPORT_SYMBOL(set_ownership_completion);
+
+void set_page_ownership_completion(struct completion *param) {
+	spin_lock(&ctr_lock);
+	page_ownership_transfer = param;
 	spin_unlock(&ctr_lock);
 }
 EXPORT_SYMBOL(set_ownership_completion);
@@ -85,19 +94,23 @@ int _tcp_server_start(void) {
 }
 EXPORT_SYMBOL(_tcp_server_start);
 
-static int accept_connection(void *socket_in) {
+static int accept_connection(void *socket_in) 
+{
 	int ret_val = 0;
 	struct socket *srv_socket = (struct socket *)socket_in;
 	struct socket *new_socket;
 	char buf[MAX_BUFFER_NET] = {0};
 	pr_info(THIS_MOD "waiting for connection\n");
-	while(!kthread_should_stop()) {
+	while(!kthread_should_stop()) 
+	{
 		kernel_accept(srv_socket, &new_socket, 0);
-		if (new_socket) {
+		if (new_socket) 
+		{
 			struct sockaddr_in connected_server_addr;
 			struct msghdr hdr;
 			memset(&hdr, 0, sizeof(hdr));
-			struct kvec iov = {
+			struct kvec iov = 
+			{
 				.iov_base = buf,
 				.iov_len = sizeof(buf) - 1
 			};
@@ -105,31 +118,54 @@ static int accept_connection(void *socket_in) {
 			pr_info(THIS_MOD "connected! client: %pI4\n", &connected_server_addr.sin_addr);
 			int len = -1;
 			connected_client_socket = new_socket;
-			for(;;) {
+			for(;;) 
+			{
 				len = kernel_recvmsg(new_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
-				if (len > 0) {
+				if (len > 0)
+				{
 					int ready = 0;
 					spin_lock(&ctr_lock);
 					memset(message_received, 0, sizeof(message_received));
-					if (strncmp(buf, "PID:", 4) == 0) {
+					if (strncmp(buf, "PFN:", 4) == 0) 
+					{
+						strscpy(ownership_transfer_message, buf, sizeof(buf));
+						ready = 1;
+					} 
+					else if (strncmp(buf, "PID:", 4) == 0) 
+					{
 						strscpy(ownership_transfer_message, buf, sizeof(buf));
 						ready = 2;
-					} else {
+					}
+					else
+					{
 						pr_info(THIS_MOD "unknown message received. Discarded\n");
 					}
 					spin_unlock(&ctr_lock);
-					if (ready == 2) {
+					if (ready == 1) 
+					{
+						pr_info(THIS_MOD "Invalidation request %s\n", ownership_transfer_message);
+						if (ownership_transfer_arrived != NULL)
+							complete(page_ownership_transfer);
+					}
+					else if (ready == 2) 
+					{
 						pr_info(THIS_MOD "Invalidation request %s\n", ownership_transfer_message);
 						if (ownership_transfer_arrived != NULL)
 							complete(ownership_transfer_arrived);
 					}
-				} else if (len == 0) {
+				} 
+				else if (len == 0) 
+				{
 					pr_info(THIS_MOD "client closed connection.\n");
 					break;
-				} else if (len == -EAGAIN) {
+				}
+				else if (len == -EAGAIN) 
+				{
 					pr_info(THIS_MOD "socket not available\n");
 					msleep(10);
-				} else {
+				}
+				else
+				{
 					pr_info(THIS_MOD "kernel_recvmsg returned %d\n", len);
 					ret_val = len;
 					break;
