@@ -29,6 +29,7 @@ void set_host(char *host_id_string);
 int is_allottable(pid_t requestor_pid);
 int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port);
 void set_new_ownership(struct ownership **new_owner, char *address, int port);
+int is_allottable_page(pid_t requestor_pid, u64 pfn_address)
 
 int is_allottable(pid_t requestor_pid) {
 	struct ownership *owner;
@@ -63,6 +64,7 @@ int is_allottable(pid_t requestor_pid) {
 			strscpy(address, "127.0.0.1", 16);
 			port = 57580;
 		}
+		kfree(temp_hostid_processing);
 	}
 
 	/*ownership checking here, also ask for permission if needed*/
@@ -167,6 +169,77 @@ int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address,
 	return ret;
 }
 EXPORT_SYMBOL(ask_for_permission);
+
+int is_allottable_page(pid_t requestor_pid, u64 pfn_address) {
+	struct ownership *owner;
+	pr_info(THIS_MOD "check if pfn 0x%llx can be allocated to %d\n", pfn_address, requestor_pid);
+	get_owner_info_on_mem(&owner);
+	char address[16] = {0};
+	int port = 0;
+	/*set host identifier on ownership data*/
+	if (strlen(this_host) == 0)
+	{
+		strscpy(address, "127.0.0.1", 16);
+		port = 57580;
+	}
+	else
+	{
+		char *temp_hostid_processing = (char *)kzalloc(sizeof(char) * strlen(this_host) + 1, GFP_KERNEL);
+		
+		strscpy(temp_hostid_processing, this_host, strlen(this_host) + 1);
+		char *ip_4_addr_from_user = strsep(&temp_hostid_processing, ":");
+		if (ip_4_addr_from_user != NULL) 
+		{
+			int port_from_user = 0;
+			int strtoint_ret = kstrtoint(temp_hostid_processing, 10, &port_from_user);
+			if (strtoint_ret >= 0) 
+			{
+				strscpy(address, ip_4_addr_from_user, sizeof(address));
+				port = port_from_user;
+			}
+		}
+		else
+		{
+			strscpy(address, "127.0.0.1", 16);
+			port = 57580;
+		}
+		kfree(temp_hostid_processing);
+	}
+
+	/*ownership checking here, also ask for permission if needed*/
+	if (owner->owner_pid <= 0)
+	{
+		pr_info(THIS_MOD "nobody owns this area\n");
+		owner->owner_pid = task_pid_nr(current);
+		strscpy(owner->ip_4_addr, address, 16);
+		owner->port = port;
+		set_owner_info_on_mem(owner);
+		return requestor_pid;
+	}
+	else
+	{
+		pr_info(THIS_MOD "owner on memory: %d. Requestor pid: %d\n", owner->owner_pid, requestor_pid);
+		if (owner->owner_pid == requestor_pid && owner->port == port && strncmp(owner->ip_4_addr, address, MAX(strlen(owner->ip_4_addr), strlen(address))) == 0)
+		{
+			/* owned by itself */
+			pr_info(THIS_MOD "owned by the caller\n");
+			return requestor_pid;
+		}
+		else
+		{
+			/*to be checked later, but return 1 for now*/
+			pr_info(THIS_MOD "owned by the other process, possibly in other host\n");
+			return requestor_pid; /*temporary, just make sure it goes here*/
+			//return ask_for_permission(owner->owner_pid, requestor_pid, address, port);
+		}
+	}
+}
+EXPORT_SYMBOL(is_allottable_page);
+
+
+
+
+
 
 void set_host(char *host_id_string) {
 	strscpy(this_host, host_id_string, sizeof(this_host));

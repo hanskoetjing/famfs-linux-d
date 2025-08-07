@@ -186,13 +186,16 @@ vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf) {
 EXPORT_SYMBOL(handle_fault_on_cxldaxdev);
 
 
-//fault handler. owner checking is handled in other c source
+//pfn fault handler. insert the pfn as read-only, write will trigger the other func
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot) {
     int ret = 0;
+	struct ownership **owner;
     struct vm_area_struct *vma = vmf->vma;
     pgoff_t dax_pgoff = vmf->pgoff;
     pr_info(THIS_MOD "dax area page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
+	if (!cxl_dax_device)
+		get_owner_info_on_mem(&owner);
 	start_data_pfn.val += (u64)dax_pgoff;
     pr_info(THIS_MOD "got pfn at: 0x%llx\n", start_data_pfn.val);
     ret = vmf_insert_pfn_prot(vmf->vma, vmf->address, start_data_pfn.val, pgprot);
@@ -201,17 +204,15 @@ vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot)
 }
 EXPORT_SYMBOL(handle_fault_on_cxldaxdev_prot);
 
-//fault handler. owner checking is handled in other c source
+//pfn write fault handler
 vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf) {
     int ret = 0;
     struct vm_area_struct *vma = vmf->vma;
     pgoff_t dax_pgoff = vmf->pgoff;
     pr_info(THIS_MOD "dax area write fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
-	start_data_pfn.val += (u64)dax_pgoff;
-    pr_info(THIS_MOD "got pfn at: 0x%llx\n", start_data_pfn.val);
     ret = vmf_insert_mixed_mkwrite(vmf->vma, vmf->address, start_data_pfn);
-    pr_info(THIS_MOD "insert pfn to vmf done\n");
-    return ret;
+    pr_info(THIS_MOD "insert pfn as writable to vmf done\n");
+    return VM_FAULT_NOPAGE;
 }
 EXPORT_SYMBOL(handle_fault_on_cxldaxdev_mkwrite);
