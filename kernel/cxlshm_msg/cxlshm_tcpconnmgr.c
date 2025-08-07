@@ -66,7 +66,7 @@ void set_page_ownership_completion(struct completion *param) {
 	page_ownership_transfer = param;
 	spin_unlock(&ctr_lock);
 }
-EXPORT_SYMBOL(set_ownership_completion);
+EXPORT_SYMBOL(set_page_ownership_completion);
 
 int _tcp_server_start(void) {
 	int ret = 0;

@@ -100,7 +100,7 @@ int invalidate_mem_page(void *data)
                     pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", pid_str, ret);
                 }
                 u64 pfn_received = 0;
-                ret = kstrtoull(pfn_str, 16, pfn_received);
+                ret = kstrtoull(pfn_str, 16, &pfn_received);
                 if (ret < 0)
                 {
                     pfn_received = 0;
@@ -161,7 +161,6 @@ int flush_mem_task(pid_t pid)
             MA_STATE(mas, &mm->mm_mt, 0, 0);
             get_owner_info_on_mem(&owner_on_mem);
             pid_t pid_on_mem = owner_on_mem->owner_pid;
-            unsigned long vm_from_mem = owner_on_mem->vm_start;
             pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", pid_on_mem, owner_on_mem->vm_start);
             mas_for_each(&mas, vma, ULONG_MAX) {
                 if (vma->vm_flags & VM_CXLSHM) 
