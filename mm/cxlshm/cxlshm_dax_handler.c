@@ -39,6 +39,7 @@ void get_current_device_path(char **dev_path);
 int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot);
+vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf);
 
 void get_current_device_path(char **dev_path) 
 {
@@ -206,3 +207,22 @@ vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot)
     return ret;
 }
 EXPORT_SYMBOL(handle_fault_on_cxldaxdev_prot);
+
+//fault handler. owner checking is handled in other c source
+vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf) {
+    int ret = 0;
+    struct vm_area_struct *vma = vmf->vma;
+    unsigned long size = vma->vm_end - vma->vm_start;
+    long nr_of_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
+    void *kaddr = NULL;
+    pgoff_t dax_pgoff = vmf->pgoff;
+    pr_info(THIS_MOD "dax area page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
+		vmf->address, vmf->pgoff);
+	pr_info(THIS_MOD "DEBUG: is backed by struct page? %d\n", pfn_t_has_page(start_data_pfn));
+	start_data_pfn.val += (u64)dax_pgoff;
+    pr_info(THIS_MOD "got pfn at: 0x%llx\n", start_data_pfn.val);
+    ret = vmf_insert_mixed_mkwrite(vmf->vma, vmf->address, start_data_pfn);
+    pr_info(THIS_MOD "insert pfn to vmf done\n");
+    return ret;
+}
+EXPORT_SYMBOL(handle_fault_on_cxldaxdev_mkwrite);

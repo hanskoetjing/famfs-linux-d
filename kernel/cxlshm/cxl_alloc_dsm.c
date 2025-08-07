@@ -51,7 +51,7 @@ static vm_fault_t cxl_dsm_mkwrite_handler(struct vm_fault *vmf)
 	vm_fault_t vmfault_handled;
 	pr_info(THIS_MOD "mkwrite fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 	vmf->address, vmf->pgoff);
-	vmfault_handled = handle_fault_on_cxldaxdev_prot(vmf, PAGE_SHARED);
+	vmfault_handled = handle_fault_on_cxldaxdev_mkwrite(vmf);
 	return vmfault_handled;
 	//return VM_FAULT_NOPAGE;
 }

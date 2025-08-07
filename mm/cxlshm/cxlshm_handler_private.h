@@ -36,6 +36,7 @@ void get_current_device_path(char **dev_path);
 int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot);
+vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf);
 
 
 #endif
