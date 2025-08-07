@@ -178,7 +178,7 @@ int is_allottable_page(pid_t requestor_pid, struct vm_fault *vmf)
 	if (vmf->pte)
 	{
 		pr_info(THIS_MOD "there's a pte here 0x%lx\n", vmf->pte->pte);
-		pr_info(THIS_MOD "pfn from pte 0x%lx\n", pte_pfn(vmf->pte->pte));
+		pr_info(THIS_MOD "pfn from pte 0x%lx\n", pte_pfn(*(vmf->pte)));
 	}
 	get_owner_info_on_mem(&owner);
 	char address[16] = {0};
