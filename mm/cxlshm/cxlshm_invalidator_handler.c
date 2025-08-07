@@ -90,9 +90,9 @@ int invalidate_mem_page(void *data)
             if (strncmp(received_copy, "PFN:", 4) == 0) 
             {
                 strsep(&received_copy, ":");
-                char *pid_str = strsep(&received_copy, ":");
-                strsep(&received_copy, ":");
                 char *pfn_str = strsep(&received_copy, ":");
+                strsep(&received_copy, ":");
+                char *pid_str = strsep(&received_copy, ":");
                 pid_t pid_received = 0;
                 int ret = kstrtoint(pid_str, 10, &pid_received);
                 if (ret < 0)
