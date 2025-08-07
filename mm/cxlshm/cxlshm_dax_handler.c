@@ -197,8 +197,7 @@ vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot)
     pgoff_t dax_pgoff = vmf->pgoff;
     pr_info(THIS_MOD "dax area page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
-	if (!start_data_pfn.val <= 0)
-		get_owner_info_on_mem(&owner);
+	read_owner_info_on_mem("");
 	start_data_pfn.val += (u64)dax_pgoff;
     pr_info(THIS_MOD "got pfn at: 0x%llx\n", start_data_pfn.val);
     ret = vmf_insert_pfn_prot(vmf->vma, vmf->address, start_data_pfn.val, pgprot);
