@@ -80,7 +80,7 @@ int invalidate_mem_page(void *data)
     memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
     while(!kthread_should_stop()) 
     {
-        long completion_ret_val = wait_for_completion_interruptible(&page_ownership_transfer);
+        long completion_ret_val = wait_for_completion_interruptible(&page_ownership_transfer_var);
         if (completion_ret_val >= 0) 
         {
             spin_lock(&ctr_lock);
