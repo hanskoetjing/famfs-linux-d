@@ -143,9 +143,11 @@ static int accept_connection(void *socket_in)
 					spin_unlock(&ctr_lock);
 					if (ready == 1) 
 					{
-						pr_info(THIS_MOD "Invalidation request %s\n", ownership_transfer_message);
-						if (ownership_transfer_arrived != NULL)
+						pr_info(THIS_MOD "page invalidation request %s\n", ownership_transfer_message);
+						if (page_ownership_transfer != NULL)
 							complete(page_ownership_transfer);
+						else
+							pr_info(THIS_MOD "page ownership completion is not set\n");
 					}
 					else if (ready == 2) 
 					{
