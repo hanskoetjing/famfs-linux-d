@@ -175,7 +175,9 @@ static int accept_connection(void *socket_in)
 					break;
 				}
 				//overwrite buf data with NULL char
-				memset(buf, 0, sizeof(buf));			
+				memset(buf, 0, sizeof(buf));
+				if (kthread_should_stop())
+					break;	
 			}
 			sock_release(new_socket);
 			new_socket = NULL;
@@ -290,7 +292,9 @@ static int wait_for_response(void *socket_in) {
 					break;
 				}
 				//overwrite buf data with NULL char
-				memset(buf, 0, sizeof(buf));			
+				memset(buf, 0, sizeof(buf));
+				if (kthread_should_stop())
+					break;
 			}
 			clnt_socket = NULL;
 			pr_info(THIS_MOD "done receiving response\n");
