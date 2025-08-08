@@ -170,7 +170,6 @@ static int accept_connection(void *socket_in)
 				}
 				else if (len == -EAGAIN) 
 				{
-					pr_info(THIS_MOD "socket not available\n");
 					continue;
 				}
 				else
