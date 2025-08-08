@@ -18,7 +18,7 @@
 
 #define THIS_MOD "cxlshm_messaging_handler: "
 
-const char * const enum_message_value[] = {"PAGE", "WHOLE_VMA"};
+const char * const enum_message_value[] = {"PAGE", "WHOLE_VMA", "DONE"};
 
 int send_invalidation_message(struct ownership *owner, int type);
 

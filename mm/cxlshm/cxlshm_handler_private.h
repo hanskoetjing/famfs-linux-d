@@ -29,6 +29,7 @@ struct mem_alloc {
 enum message_type {
 	PAGE,
 	WHOLE_VMA,
+	DONE,
 	SENTINEL_ONLY
 };
 
