@@ -33,7 +33,8 @@ int is_allottable_page(pid_t requestor_pid, struct vm_fault *vmf);
 int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *address, int port, struct vm_fault *vmf);
 void get_location_info(char **location_info_string);
 
-int is_allottable(pid_t requestor_pid) {
+int is_allottable(pid_t requestor_pid) 
+{
 	struct ownership *owner;
 	pr_info(THIS_MOD "is_allottable function here %d\n", requestor_pid);
 	get_owner_info_on_mem(&owner);
@@ -67,7 +68,8 @@ int is_allottable(pid_t requestor_pid) {
 }
 EXPORT_SYMBOL(is_allottable);
 
-int is_allottable_page(pid_t requestor_pid) {
+int is_allottable_page(pid_t requestor_pid , struct vm_fault *vmf) 
+{
 	struct ownership *owner;
 	unsigned long virt_addr = vmf->address;
 	pr_info(THIS_MOD "is_allottable function here %d\n", requestor_pid);
@@ -103,12 +105,14 @@ int is_allottable_page(pid_t requestor_pid) {
 }
 EXPORT_SYMBOL(is_allottable_page);
 
-void set_host(char *host_id_string) {
+void set_host(char *host_id_string) 
+{
 	strscpy(this_host, host_id_string, sizeof(this_host));
 }
 EXPORT_SYMBOL(set_host);
 
-void get_location_info(char **location_info_string) {
+void get_location_info(char **location_info_string) 
+{
 	*location_info_string = (char *)kzalloc(sizeof(char) * MAX_LOCATION_LENGTH, GFP_KERNEL);
 	if (*location_info_string != NULL)
 		strscpy(*location_info_string, this_host, sizeof(this_host));
