@@ -48,7 +48,7 @@ int invalidate_mem_area(void *data)
             spin_unlock(&ctr_lock);
             int message_type = get_message_type(received_copy);
             pr_info(THIS_MOD "message: %s message_type %d\n", received_copy, message_type);
-            if(message_type == PAGE)
+            if(message_type == WHOLE_VMA)
             {
                 struct ownership *owner;
                 get_owner_info_on_mem(&owner);
