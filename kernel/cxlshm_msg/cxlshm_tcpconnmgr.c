@@ -136,6 +136,7 @@ static int accept_connection(void *socket_in)
 					int msg_type = get_message_type(buf);
 					if (msg_type >= 0)
 					{
+						strncpy(ownership_transfer_message, buf, sizeof(ownership_transfer_message));
 						ready = 2;
 					}
 					else
