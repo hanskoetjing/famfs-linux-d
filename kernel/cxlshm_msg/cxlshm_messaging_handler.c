@@ -75,13 +75,13 @@ EXPORT_SYMBOL(send_invalidation_message);
 int get_message_type(char *message_str)
 {
 	int i = 0;
-	while(enum_message_value[i] != NULL) 
+	for (; i < SENTINEL_ONLY; i++) 
 	{
 		if(strncmp(message_str, enum_message_value[i], strlen(enum_message_value[i]) == 0))
 			break;
-		i++;
 	}
-	if (enum_message_value[i] == NULL) 
+
+	if (i == SENTINEL_ONLY) 
 		return -EINVAL;
 	else
 		return i;

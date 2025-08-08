@@ -28,7 +28,8 @@ struct mem_alloc {
 
 enum message_type {
 	PAGE,
-	WHOLE_VMA
+	WHOLE_VMA,
+	SENTINEL_ONLY
 };
 
 extern const char * const enum_message_value[];
