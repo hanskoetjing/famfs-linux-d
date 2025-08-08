@@ -262,9 +262,13 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                     {
                         ptep_clear_flush(vma, addr, ptep);
                         found = 1;
+                        spin_unlock(sp);
                         break;
                     }
-                    pte_unmap_unlock(ptep, sp);
+                    else
+                    {
+                        pte_unmap_unlock(ptep, sp);
+                    }
                 }
                 up_read(&(this_mm->mmap_lock));
                 if (found = 1)
