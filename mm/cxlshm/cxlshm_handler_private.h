@@ -31,7 +31,7 @@ enum message_type {
 	WHOLE_VMA
 };
 
-const char * const enum_message_value[] = {"PAGE", "WHOLE_VMA"};
+extern const char * const enum_message_value[];
 
 //cxlshm_dax_handler
 int get_cxl_dax_dev(char *device_path_param);
