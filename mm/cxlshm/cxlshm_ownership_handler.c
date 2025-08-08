@@ -211,7 +211,7 @@ void get_location_info(char **location_info_string) {
 	if (*location_info_string != NULL)
 		strscpy(*location_info_string, this_host, sizeof(this_host));
 }
-EXPORT_SYMBOL(set_get_location_infohost);
+EXPORT_SYMBOL(get_location_info);
 
 /*syscall to set host id. format: IP_V4:PORT*/
 SYSCALL_DEFINE1(set_process_identification, char __user *, process_id)
