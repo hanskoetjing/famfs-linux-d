@@ -263,6 +263,7 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                         ptep_clear_flush(vma, addr, ptep);
                         found = 1;
                         spin_unlock(sp);
+                        rcu_read_unlock();
                         break;
                     }
                     else
