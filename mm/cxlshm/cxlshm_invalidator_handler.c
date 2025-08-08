@@ -30,6 +30,7 @@ int invalidate_mem_area(void *data);
 int invalidate_mem_page(void *data);
 struct task_struct *get_task_from_int_pid(pid_t pid);
 int flush_mem_task(pid_t pid);
+int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush);
 
 int invalidate_mem_area(void *data) 
 {
@@ -207,7 +208,6 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
 	struct vm_area_struct *this_vma = NULL;
     struct task_struct *the_task = NULL;
     struct ownership *owner_on_mem;
-    struct mm_struct *mm = NULL;
 	if (pid != -1) 
     {
 		the_task = get_task_from_int_pid(pid);
@@ -238,11 +238,11 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                 unsigned long start = this_vma->vm_start;
                 unsigned long end = this_vma->vm_end;
                 unsigned long addr = 0;
-                mm = this_vma->vm_mm;
+                struct mm_struct *this_mm = this_vma->vm_mm;
                 spinlock_t *sp;
                 for (addr = vma->vm_start; addr < vma->vm_end; addr += PAGE_SIZE)
                 {
-                    pgd_t *pgd = pgd_offset(mm, addr);
+                    pgd_t *pgd = pgd_offset(this_mm, addr);
                     if (pgd_none(*pgd) || pgd_bad(*pgd))
                         continue;
                     p4d_t *p4d = p4d_offset(pgd, addr);
@@ -254,7 +254,7 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                     pmd_t *pmd = pmd_offset(pud, addr);
                     if (pmd_none(*pmd) || pmd_bad(*pmd))
                         continue;
-                    ptep = pte_offset_map_lock(mm, pmd, addr, &sp);
+                    ptep = pte_offset_map_lock(this_mm, pmd, addr, &sp);
                     pr_info(THIS_MOD "pfn in this pte: 0x%lx\n", pte_pfn(*ptep));
                     if (pte_pfn(*ptep) == pfn_to_flush.val)
                     {
