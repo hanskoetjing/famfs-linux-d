@@ -257,9 +257,11 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                     pr_info(THIS_MOD "pfn in this pte: 0x%lx\n", pte_pfn(*ptep));
                     if (pte_pfn(*ptep) == pfn_to_flush.val)
                     {
+                        pr_info(THIS_MOD "got matching pfn\n");
+                        pte_unmap_unlock(ptep, sp);
                         break;
                     }
-                    pte_unmap_unlock(ptep, sp);
+                    
                     break;
                 }
             } 
