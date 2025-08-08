@@ -29,7 +29,6 @@ struct mem_alloc {
 int get_cxl_dax_dev(char *device_path_param);
 int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn);
 int get_cxl_dax_device(char *device_path_param);
-vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf);
 void get_current_device_path(char **dev_path);
 int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);

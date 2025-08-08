@@ -36,7 +36,7 @@ static vm_fault_t cxl_helper_fault(struct vm_fault *vmf)
 
 	if (is_allottable_to_this_task > 0) 
 	{
-		vmfault_handled = handle_fault_on_cxldaxdev(vmf);
+		vmfault_handled = handle_fault_on_cxldaxdev_prot(vmf, vmf->vma->vm_page_prot);
 		return vmfault_handled;
 	} 
 	else 
@@ -74,7 +74,7 @@ unsigned long __cxl_alloc(char *dax_device_path, unsigned long len)
 	owner_pid = task_pid_nr(current);
     unsigned long addr;
     const unsigned long prot  = PROT_READ | PROT_WRITE;
-    const unsigned long flags = MAP_SHARED | MAP_ANONYMOUS;
+    const unsigned long flags = MAP_SHARED;
 	vm_flags_t vm_flags = VM_IO | VM_DONTEXPAND | VM_DONTDUMP | VM_USERMAP |
 				VM_READ | VM_WRITE | VM_MAYREAD | VM_MAYWRITE | VM_MIXEDMAP|
 				VM_CXLSHM;

@@ -34,7 +34,6 @@ int lookup_daxdev(const char *pathname, dev_t *devno);
 int get_cxl_dax_dev(char *device_path_param);
 int read_owner_info_on_mem(char *device_path_param);
 int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn);
-vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf);
 void get_current_device_path(char **dev_path);
 int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
@@ -172,23 +171,6 @@ int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_k
 }
 EXPORT_SYMBOL(alloc_mem_on_devdax);
 
-//fault handler. owner checking is handled in other c source
-vm_fault_t handle_fault_on_cxldaxdev(struct vm_fault *vmf) {
-    int ret = 0;
-    struct vm_area_struct *vma = vmf->vma;
-    pgoff_t dax_pgoff = vmf->pgoff;
-    pr_info(THIS_MOD "dax area page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
-		vmf->address, vmf->pgoff);
-	pr_info(THIS_MOD "DEBUG: is backed by struct page? %d\n", pfn_t_has_page(start_data_pfn));
-	start_data_pfn.val += (u64)dax_pgoff;
-    pr_info(THIS_MOD "got pfn at: 0x%llx\n", start_data_pfn.val);
-    ret = vmf_insert_mixed(vmf->vma, vmf->address, start_data_pfn);
-    pr_info(THIS_MOD "insert pfn to vmf done\n");
-    return ret;
-}
-EXPORT_SYMBOL(handle_fault_on_cxldaxdev);
-
-
 //pfn fault handler. insert the pfn as read-only, write will trigger the other func
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot) {
     int ret = 0;
@@ -213,12 +195,32 @@ vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf) {
     pgoff_t dax_pgoff = vmf->pgoff;
     pr_info(THIS_MOD "dax area write fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);
+	struct mm_struct *mm = vmf->vma->vm_mm;
+	if (vmf->pte != NULL)
+	{
+		pr_info(THIS_MOD "pte writable? %d\n", pte_write(*(vmf->pte)));
+		down_read(&(this_mm->mmap_lock));
+		spin_lock(vmf->ptl);
+		pte_t *ptep = vmf->pte;
+		pte_t new_pte = *ptep;
+		new_pte = pte_mkwrite(new_pte, vma);
+		u64 pfn = pte_pfn(new_pte);
+		flush_cache_page(vma, addr, pfn);
+		set_pte(ptep, new_pte);
+		flush_tlb_page(vma, vmf->address);
+    	update_mmu_cache(vma, vmf->address, ptep);
+		spin_unlock(vmf->ptl);
+		up_read(&(this_mm->mmap_lock));
+		pr_info(THIS_MOD "pte writable now? %d\n", pte_write(*(vmf->pte)));
+	}
+
+	/*
 	pte_t pte_from_vmf = *(vmf->pte);
 	unsigned long pfn_from_vmf = pte_pfn(pte_from_vmf);
 	pfn_t pfn_to_insert;
 	pfn_to_insert.val = pfn_from_vmf;
     ret = vmf_insert_mixed_mkwrite(vmf->vma, vmf->address, pfn_to_insert);
-    pr_info(THIS_MOD "insert pfn as writable to vmf done\n");
+    pr_info(THIS_MOD "insert pfn as writable to vmf done\n");*/
     return VM_FAULT_NOPAGE;
 }
 EXPORT_SYMBOL(handle_fault_on_cxldaxdev_mkwrite);
