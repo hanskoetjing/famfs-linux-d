@@ -199,7 +199,7 @@ vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf) {
 	if (vmf->pte != NULL)
 	{
 		pr_info(THIS_MOD "pte writable? %d\n", pte_write(*(vmf->pte)));
-		down_read(&(this_mm->mmap_lock));
+		down_read(&(mm->mmap_lock));
 		spin_lock(vmf->ptl);
 		pte_t *ptep = vmf->pte;
 		pte_t new_pte = *ptep;
@@ -210,7 +210,7 @@ vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf) {
 		flush_tlb_page(vma, vmf->address);
     	update_mmu_cache(vma, vmf->address, ptep);
 		spin_unlock(vmf->ptl);
-		up_read(&(this_mm->mmap_lock));
+		up_read(&(mm->mmap_lock));
 		pr_info(THIS_MOD "pte writable now? %d\n", pte_write(*(vmf->pte)));
 	}
 
