@@ -233,10 +233,6 @@ EXPORT_SYMBOL(_tcp_server_stop);
 //client. move to here for easy recompiling
 int _tcp_client_start(char *ip_4_addr, int port) {
 	int ret = 0;
-	if (client_socket)
-	{
-		sock_release(client_socket);
-	}
 	if (!client_socket) {
 		strscpy(client_ip_4_addr, ip_4_addr, strlen(ip_4_addr) + 1);
 		client_port = port;
@@ -368,7 +364,7 @@ int _tcp_client_stop(void) {
 			kthread_stop(response_acceptor_thread);
 		}
 	}
-
+	client_socket = NULL;
 	return ret;
 }
 EXPORT_SYMBOL(_tcp_client_stop);
