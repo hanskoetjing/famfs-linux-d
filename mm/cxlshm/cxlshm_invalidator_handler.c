@@ -39,10 +39,10 @@ int invalidate_mem_area(void *data)
     while(!kthread_should_stop()) 
     {
         long completion_ret_val = wait_for_completion_interruptible(&ownership_transfer_arrival_var);
-        char *received_copy = kzalloc(MAX_BUFFER_NET * sizeof(char), GFP_NOWAIT); //using nowait as this is IO
-        memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
         if (completion_ret_val >= 0) 
         {
+            char *received_copy = kzalloc(MAX_BUFFER_NET * sizeof(char), GFP_NOWAIT); //using nowait as this is IO
+            memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
             spin_lock(&ctr_lock);
             strscpy(received_copy, ownership_transfer_message, MAX_BUFFER_NET - 1);
             memset(ownership_transfer_message, 0, sizeof(ownership_transfer_message));
