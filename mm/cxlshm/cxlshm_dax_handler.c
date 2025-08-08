@@ -205,7 +205,6 @@ vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf) {
 		pte_t new_pte = *ptep;
 		new_pte = pte_mkwrite(new_pte, vma);
 		u64 pfn = pte_pfn(new_pte);
-		flush_cache_page(vma, addr, pfn);
 		set_pte(ptep, new_pte);
 		flush_tlb_page(vma, vmf->address);
     	update_mmu_cache(vma, vmf->address, ptep);
