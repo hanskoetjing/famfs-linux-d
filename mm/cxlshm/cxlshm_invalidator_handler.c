@@ -46,21 +46,9 @@ int invalidate_mem_area(void *data)
             strscpy(received_copy, ownership_transfer_message, MAX_BUFFER_NET - 1);
             memset(ownership_transfer_message, 0, sizeof(ownership_transfer_message));
             spin_unlock(&ctr_lock);
-            if (strncmp(received_copy, "PID:", 4) == 0) 
-            {
-                strsep(&received_copy, ":");
-                pid_t pid_received = 0;
-                int ret = kstrtoint(received_copy, 10, &pid_received);
-                if (ret >= 0) 
-                {
-                    flush_mem_task(pid_received);
-                } 
-                else 
-                {
-                    pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", received_copy, ret);
-                }
-                ret = _send_response("DONE");
-            }
+            int message_type = get_message_type(received_copy);
+            pr_info(THIS_MOD "message_type %d\n", message_type);
+            ret = _send_response("DONE");
             reinit_completion(&ownership_transfer_arrival_var);
         } 
         else 

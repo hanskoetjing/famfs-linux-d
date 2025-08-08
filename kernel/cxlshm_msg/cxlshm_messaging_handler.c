@@ -71,3 +71,19 @@ int send_invalidation_message(struct ownership *owner, int type)
 	_tcp_client_stop();
 }
 EXPORT_SYMBOL(send_invalidation_message);
+
+int get_message_type(char *message_str)
+{
+	int i = 0;
+	while(enum_message_value[i] != NULL) 
+	{
+		if(strncmp(message_str, enum_message_value[i], strlen(enum_message_value[i]) == 0))
+			break;
+		i++;
+	}
+	if (enum_message_value[i] == null) 
+		return -EINVAL;
+	else
+		return i;
+}
+EXPORT_SYMBOL(get_message_type);

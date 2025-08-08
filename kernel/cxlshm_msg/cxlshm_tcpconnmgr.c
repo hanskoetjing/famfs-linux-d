@@ -133,7 +133,7 @@ static int accept_connection(void *socket_in)
 					int ready = 0;
 					spin_lock(&ctr_lock);
 					memset(message_received, 0, sizeof(message_received));
-					if (strncmp(buf, "PFN:", 4) == 0) 
+					if (strncmp(buf, enum_message_value[PAGE], strlen(enum_message_value[PAGE])) == 0) 
 					{
 						strscpy(page_ownership_message, buf, sizeof(buf));
 						ready = 1;

@@ -31,5 +31,5 @@ int _tcp_client_stop(void);
 
 //messaging
 int send_invalidation_message(struct ownership *owner, int type);
-
+int get_message_type(char *message_str);
 #endif
