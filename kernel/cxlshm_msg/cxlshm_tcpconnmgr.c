@@ -223,6 +223,7 @@ int _tcp_server_stop(void) {
     if (task_is_running(acceptor_thread)) {
         thread_ret = kthread_stop(acceptor_thread);
     }
+	msleep(500);
 	if (server_socket && thread_ret <= 0) {
 		sock_release(server_socket);
 		server_socket == NULL;
