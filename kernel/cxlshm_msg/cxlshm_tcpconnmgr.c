@@ -110,10 +110,6 @@ static int accept_connection(void *socket_in)
 	pr_info(THIS_MOD "waiting for connection\n");
 	while(!kthread_should_stop()) 
 	{
-		long is_killable_accept = 
-			wait_event_killable_timeout(*(sk_sleep(srv_socket->sk)), kthread_should_stop(), msecs_to_jiffies(200));
-		if (is_killable_accept < 0)
-			break;
 		int ret = kernel_accept(srv_socket, &new_socket, SOCK_NONBLOCK);
 		if (ret == 0) 
 		{
@@ -260,26 +256,31 @@ int _tcp_client_start(char *ip_4_addr, int port) {
 }
 EXPORT_SYMBOL(_tcp_client_start);
 
-static int wait_for_response(void *socket_in) {
+static int wait_for_response(void *socket_in) 
+{
 	int ret_val = 0;
 	struct socket *clnt_socket = (struct socket *)socket_in;
 	char buf[MAX_BUFFER_NET] = {0};
 	pr_info(THIS_MOD "waiting for response\n");
-	while(!kthread_should_stop()) {
+	while(!kthread_should_stop()) 
+	{
 		if (clnt_socket) {
 			struct sockaddr_in connected_client_addr;
 			struct msghdr hdr;
 			memset(&hdr, 0, sizeof(hdr));
-			struct kvec iov = {
+			struct kvec iov = 
+			{
 				.iov_base = buf,
 				.iov_len = sizeof(buf) - 1
 			};
 			kernel_getpeername(clnt_socket, (struct sockaddr *)&connected_client_addr);
 			pr_info(THIS_MOD "connected! server: %pI4\n", &connected_client_addr.sin_addr);
 			int len = -1;
-			for(;;) {
-				len = kernel_recvmsg(clnt_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
-				if (len > 0) {
+			while(!kthread_should_stop()) 
+			{
+				len = kernel_recvmsg(clnt_socket, &hdr, &iov, 1, sizeof(buf) - 1, MSG_DONTWAIT);
+				if (len > 0) 
+				{
 					int ready = 0;
 					spin_lock(&client_lock);
 					memset(response_received, 0, sizeof(response_received));
@@ -294,26 +295,37 @@ static int wait_for_response(void *socket_in) {
 						pr_info(THIS_MOD "response message: invalidation completion\n");
 						complete(&is_complete);
 					}
-				} else if (len == 0) {
+				}
+				else if (len == 0)
+				{
 					pr_info(THIS_MOD "no response received\n");
 					break;
-				} else {
+				}
+				else if (len == -EAGAIN) 
+				{
+					continue;
+				}
+				else
+				{
 					ret_val = len;
 					break;
 				}
 				//overwrite buf data with NULL char
 				memset(buf, 0, sizeof(buf));
-				if (kthread_should_stop())
-					break;
+				
 			}
 			clnt_socket = NULL;
 			pr_info(THIS_MOD "done receiving response\n");
 			break;
-		} else {
+		}
+		else 
+		{
 			pr_info(THIS_MOD "no client socket\n");
 			break;
 		}
 	}
+	pr_info(THIS_MOD "disconnect from server %s port %d\n", client_ip_4_addr, client_port);
+	sock_release(client_socket);
 	pr_info(THIS_MOD "response waiter thread exit. Bye\n");
 	return ret_val;
 }
@@ -348,12 +360,9 @@ EXPORT_SYMBOL(_send_message);
 int _tcp_client_stop(void) {
 	int ret = 0;
 	if (client_socket) {
-		if (task_is_running(response_acceptor_thread) || response_acceptor_thread->__state == TASK_NORMAL) {
+		if (task_is_running(response_acceptor_thread)) {
 			kthread_stop(response_acceptor_thread);
 		}
-		pr_info(THIS_MOD "disconnect from server %s port %d\n", client_ip_4_addr, client_port);
-		sock_release(client_socket);
-		client_socket = NULL;
 	}
 
 	return ret;
