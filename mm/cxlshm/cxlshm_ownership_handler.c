@@ -103,10 +103,7 @@ int is_allottable_page(pid_t requestor_pid, struct vm_fault *vmf)
 	if (owner->owner_pid <= 0)
 	{
 		pr_info(THIS_MOD "nobody owns this area\n");
-		owner->owner_pid = task_pid_nr(current);
-		strscpy(owner->ip_4_addr, address, 16);
-		owner->port = port;
-		set_owner_info_on_mem(owner);
+		set_owner_info_on_mem(NULL);
 		return requestor_pid;
 	}
 	else
@@ -143,7 +140,7 @@ int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *add
 	{
 		pr_info(THIS_MOD "set ownership on memory to %d\n", requestor_pid);
 		get_owner_info_on_mem(&owner);
-		set_new_ownership(&owner, address, port);
+		set_owner_info_on_mem(NULL);
 		return requestor_pid;
 	}
 	else if (existing_owner > 0)
@@ -158,7 +155,7 @@ int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *add
 		if (ret < 0) 
 		{
 			pr_info(THIS_MOD "can't connect to server %s %d\n", owner->ip_4_addr, owner->port);
-			set_new_ownership(&owner, address, port);//if can't connect, just take over
+			set_owner_info_on_mem(NULL);
 		}
 		else
 		{
@@ -173,7 +170,7 @@ int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *add
 				spin_unlock(&client_lock);
 				if (strncmp(received_copy, "DONE", 4) == 0) {
 					pr_info(THIS_MOD "ownership transfer completed\n");
-					set_new_ownership(&owner, address, port);
+					set_owner_info_on_mem(NULL);
 					ret = requestor_pid;
 				} else {
 					pr_info(THIS_MOD "not a completion message, maybe handled later\n");
@@ -182,7 +179,7 @@ int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *add
 			} else if (completion_ret_val == 0) {
 				pr_info(THIS_MOD "timeout waiting for response\n");
 				//automatically take over ownership if timeout occurred
-				set_new_ownership(&owner, address, port);
+				set_owner_info_on_mem(NULL);
 				ret = 1;
 			} else {
 				pr_info(THIS_MOD "interrupted\n");
