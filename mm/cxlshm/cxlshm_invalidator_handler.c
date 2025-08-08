@@ -66,7 +66,6 @@ int invalidate_mem_area(void *data)
             return -EINTR;
         }
     }
-    kfree(received_copy);
     pr_info(THIS_MOD "thread returns\n");
     return ret;
 }
