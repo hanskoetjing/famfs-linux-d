@@ -86,8 +86,8 @@ int invalidate_mem_page(void *data)
         {
             pr_info(THIS_MOD "got page invalidation request\n");
             spin_lock(&ctr_lock);
-            strscpy(received_copy, ownership_transfer_message, MAX_BUFFER_NET - 1);
-            memset(ownership_transfer_message, 0, sizeof(ownership_transfer_message));
+            strscpy(received_copy, page_ownership_message, MAX_BUFFER_NET - 1);
+            memset(page_ownership_message, 0, sizeof(page_ownership_message));
             spin_unlock(&ctr_lock);
             if (strncmp(received_copy, "PFN:", 4) == 0) 
             {

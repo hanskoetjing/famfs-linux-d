@@ -30,7 +30,9 @@ EXPORT_SYMBOL(message_received);
 char response_received[MAX_BUFFER_NET] = {0};
 EXPORT_SYMBOL(response_received);
 char ownership_transfer_message[MAX_BUFFER_NET] = {0};
-EXPORT_SYMBOL(ownership_transfer_message);
+EXPORT_SYMBOL(ownership_transfer_message);page_ownership_message
+char page_ownership_message[MAX_BUFFER_NET] = {0};
+EXPORT_SYMBOL(page_ownership_message);
 char client_ip_4_addr[16] = {0};
 int client_port = 0;
 
@@ -128,7 +130,7 @@ static int accept_connection(void *socket_in)
 					memset(message_received, 0, sizeof(message_received));
 					if (strncmp(buf, "PFN:", 4) == 0) 
 					{
-						strscpy(ownership_transfer_message, buf, sizeof(buf));
+						strscpy(page_ownership_message, buf, sizeof(buf));
 						ready = 1;
 					} 
 					else if (strncmp(buf, "PID:", 4) == 0) 
@@ -143,7 +145,7 @@ static int accept_connection(void *socket_in)
 					spin_unlock(&ctr_lock);
 					if (ready == 1) 
 					{
-						pr_info(THIS_MOD "page invalidation request %s\n", ownership_transfer_message);
+						pr_info(THIS_MOD "page invalidation request %s\n", page_ownership_message);
 						if (page_ownership_transfer != NULL)
 							complete(page_ownership_transfer);
 						else
