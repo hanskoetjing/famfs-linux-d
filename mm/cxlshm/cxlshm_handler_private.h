@@ -13,18 +13,11 @@ struct ownership { //TODO: add version to the struct...
 	pid_t owner_pid;
 	char ip_4_addr[17];
     int port;
-	pfn_t start;
-	pfn_t end;
 	unsigned long vm_start;
 	unsigned long vm_end;
+	unsigned long offset;
 };
 
-struct mem_alloc {
-	pid_t owner_pid;
-	char ip_4_addr[17];
-    int port;
-	struct dax_device *cxl_dax_dev;
-};
 
 enum message_type {
 	PAGE,
@@ -45,8 +38,10 @@ int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot);
 vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf);
+void set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_start, unsigned long vm_end, unsigned long offset);
+
 //ownership handler
-int is_allottable(pid_t requestor_pid);
+int is_allottable(pid_t requestor_pid, struct vm_fault *vmf);
 int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port);
 int is_allottable_page(pid_t requestor_pid, struct vm_fault *vmf);
 void get_location_info(char **location_info_string);

@@ -39,6 +39,7 @@ void get_current_device_path(char **dev_path);
 int process_location_info(char **address, int *port);
 int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
+void set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_start, unsigned long vm_end, unsigned long offset);
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot);
 vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf);
 
@@ -113,38 +114,33 @@ int get_owner_info_on_mem(struct ownership **owner)
 }
 EXPORT_SYMBOL(get_owner_info_on_mem);
 
+void set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_start, unsigned long vm_end, unsigned long offset) 
+{
+	struct ownership *new_owner = kzalloc(sizeof(struct ownership), GFP_KERNEL);
+	new_owner->owner_pid = pid;
+	char *ip_4_addr;
+	int owner_port;
+	process_location_info(&ip_4_addr, &owner_port);
+	new_owner->port = owner_port;
+	struct mm_struct *mm = current->mm;
+	if (mm == NULL) 
+		return -1;
+	new_owner->vm_start = vm_start;
+	new_owner->vm_end = vm_end;
+	new_owner->offset = offset;
+	pr_info(THIS_MOD "vm_start: 0x%lx vm_end: 0x%lx\n", new_owner->vm_start, new_owner->vm_end);
+	strscpy(new_owner->ip_4_addr, ip_4_addr, 16);
+	*owner = new_owner;
+	kfree(ip_4_addr);
+}
+EXPORT_SYMBOL(set_new_owner_info);
+
 int set_owner_info_on_mem(struct ownership *owner)
 {
 	read_owner_info_on_mem(device_path);
 	if (owner == NULL)
 	{
-		struct ownership *new_owner = kzalloc(sizeof(struct ownership), GFP_KERNEL);
-		new_owner->owner_pid = task_pid_nr(current);
-		char *ip_4_addr;
-		int owner_port;
-		process_location_info(&ip_4_addr, &owner_port);
-		new_owner->port = owner_port;
-		struct mm_struct *mm = current->mm;
-		if (mm == NULL) 
-			return -1;
-		struct vm_area_struct *vma;
-		struct vm_area_struct *this_vma;
-		MA_STATE(mas, &mm->mm_mt, 0, 0);
-		mas_for_each(&mas, vma, ULONG_MAX) 
-		{
-			if (vma->vm_flags & VM_CXLDSM || vma->vm_flags & VM_CXLSHM) 
-			{
-				this_vma = vma;
-				break;
-			}
-		}
-		new_owner->vm_start = this_vma->vm_start;
-		new_owner->vm_end = this_vma->vm_end;
-		pr_info(THIS_MOD "vm_start: 0x%lx vm_end: 0x%lx\n", new_owner->vm_start, new_owner->vm_end);
-		strscpy(new_owner->ip_4_addr, ip_4_addr, 16);
-		memcpy(alloc_table_start, new_owner, sizeof(struct ownership));
-		kfree(ip_4_addr);
-		kfree(new_owner);
+		return -EINVAL;
 	}
 	else
 	{

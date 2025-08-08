@@ -27,13 +27,13 @@ EXPORT_SYMBOL(this_host);
 
 int change_ownership(pid_t current_owner, pid_t requestor);
 void set_host(char *host_id_string);
-int is_allottable(pid_t requestor_pid);
+int is_allottable(pid_t requestor_pid, struct vm_fault *vmf);
 void set_new_ownership(struct ownership **new_owner, char *address, int port);
 int is_allottable_page(pid_t requestor_pid, struct vm_fault *vmf);
 int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *address, int port, struct vm_fault *vmf);
 void get_location_info(char **location_info_string);
 
-int is_allottable(pid_t requestor_pid) 
+int is_allottable(pid_t requestor_pid, struct vm_fault *vmf) 
 {
 	struct ownership *owner;
 	pr_info(THIS_MOD "is_allottable function here %d\n", requestor_pid);
@@ -42,7 +42,9 @@ int is_allottable(pid_t requestor_pid)
 	if (owner->owner_pid <= 0)
 	{
 		pr_info(THIS_MOD "nobody owns this area\n");
-		set_owner_info_on_mem(NULL);
+		set_new_owner_info(&owner, task_pid_nr(current), vmf->vma->vm_start, vmf->vma->vm_end, vmf->pgoff);
+		set_owner_info_on_mem(owner);
+		kfree(owner);
 		return requestor_pid;
 	}
 	else
@@ -60,7 +62,9 @@ int is_allottable(pid_t requestor_pid)
 			int ownership_transfer_status = send_invalidation_message(owner, WHOLE_VMA);
 			if(ownership_transfer_status == 1)
 			{
-				set_owner_info_on_mem(NULL);
+				set_new_owner_info(&owner, task_pid_nr(current), vmf->vma->vm_start, vmf->vma->vm_end, vmf->pgoff);
+				set_owner_info_on_mem(owner);
+				kfree(owner);
 			}
 			return requestor_pid;
 		}
@@ -79,7 +83,9 @@ int is_allottable_page(pid_t requestor_pid , struct vm_fault *vmf)
 	if (owner->owner_pid <= 0)
 	{
 		pr_info(THIS_MOD "nobody owns this area\n");
-		set_owner_info_on_mem(NULL);
+		set_new_owner_info(&owner, task_pid_nr(current), vmf->vma->vm_start, vmf->vma->vm_end, vmf->pgoff);
+		set_owner_info_on_mem(owner);
+		kfree(owner);
 		return requestor_pid;
 	}
 	else
@@ -97,7 +103,9 @@ int is_allottable_page(pid_t requestor_pid , struct vm_fault *vmf)
 			int ownership_transfer_status = send_invalidation_message(owner, PAGE);
 			if(ownership_transfer_status == 1)
 			{
-				set_owner_info_on_mem(NULL);
+				set_new_owner_info(&owner, task_pid_nr(current), vmf->vma->vm_start, vmf->vma->vm_end, vmf->pgoff);
+				set_owner_info_on_mem(owner);
+			kfree(owner);
 			}
 			return requestor_pid;
 		}
