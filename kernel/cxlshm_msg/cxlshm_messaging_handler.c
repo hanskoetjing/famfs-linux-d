@@ -22,7 +22,7 @@ const char * const enum_message_value[] = {"PAGE", "WHOLE_VMA", "DONE"};
 
 int send_invalidation_message(struct ownership *owner, int type);
 
-/*return 0 on ownership taken over, otherwise error*/
+/*return 1 on ownership taken over, otherwise error*/
 int send_invalidation_message(struct ownership *owner, int type) 
 {
 	int ret = 0;
@@ -30,7 +30,7 @@ int send_invalidation_message(struct ownership *owner, int type)
 	if (ret < 0) 
 	{
 		pr_info(THIS_MOD "can't connect to server %s %d\n", owner->ip_4_addr, owner->port);
-		return 0;
+		return 1;
 	}
 	else
 	{
@@ -49,7 +49,7 @@ int send_invalidation_message(struct ownership *owner, int type)
 			spin_unlock(&client_lock);
 			if (strncmp(received_copy, "DONE", 4) == 0) {
 				pr_info(THIS_MOD "ownership transfer completed\n");
-				return 0;
+				return 1;
 			}
 			else
 			{
@@ -60,7 +60,7 @@ int send_invalidation_message(struct ownership *owner, int type)
 		else if (completion_ret_val == 0) 
 		{
 			pr_info(THIS_MOD "timeout waiting for response\n");
-			return 0;
+			return 1;
 		} 
 		else 
 		{
@@ -77,7 +77,12 @@ int get_message_type(char *message_str)
 	int i = 0;
 	for (; i < SENTINEL_ONLY; i++) 
 	{
-		if(strncmp(message_str, enum_message_value[i], strlen(enum_message_value[i]) == 0))
+		if(strncmp(message_str, enum_message_value[i], strlen(enum_message_value[i])) == 0)
+		{
+			int a = strncmp(message_str, enum_message_value[i], strlen(enum_message_value[i]));
+			pr_info(THIS_MOD "DEBUG: strncmp result: %d\n", a);
+			int ba = strncmp(message_str, enum_message_value[i], strlen(enum_message_value[i] + 1));
+			pr_info(THIS_MOD "DEBUG: strncmp+1 result: %d\n", b);
 			break;
 	}
 
