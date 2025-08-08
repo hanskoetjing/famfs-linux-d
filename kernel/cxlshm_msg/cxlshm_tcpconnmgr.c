@@ -314,6 +314,8 @@ static int wait_for_response(void *socket_in)
 				memset(buf, 0, sizeof(buf));
 				
 			}
+			pr_info(THIS_MOD "disconnect from server %s port %d\n", client_ip_4_addr, client_port);
+			sock_release(clnt_socket);
 			clnt_socket = NULL;
 			pr_info(THIS_MOD "done receiving response\n");
 			break;
@@ -324,8 +326,7 @@ static int wait_for_response(void *socket_in)
 			break;
 		}
 	}
-	pr_info(THIS_MOD "disconnect from server %s port %d\n", client_ip_4_addr, client_port);
-	sock_release(client_socket);
+	
 	pr_info(THIS_MOD "response waiter thread exit. Bye\n");
 	return ret_val;
 }
