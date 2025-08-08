@@ -49,26 +49,27 @@ int send_invalidation_message(struct ownership *owner, int type)
 			spin_unlock(&client_lock);
 			if (strncmp(received_copy, "DONE", 4) == 0) {
 				pr_info(THIS_MOD "ownership transfer completed\n");
-				return 1;
+				ret = 1;
 			}
 			else
 			{
 				pr_info(THIS_MOD "not a completion message, maybe handled later\n");
-				return -EINVAL;
+				ret = -EINVAL;
 			}
 		} 
 		else if (completion_ret_val == 0) 
 		{
 			pr_info(THIS_MOD "timeout waiting for response\n");
-			return 1;
+			ret = 1;
 		} 
 		else 
 		{
 			pr_info(THIS_MOD "interrupted\n");
-			return -EAGAIN;
+			ret = -EAGAIN;
 		}
 	}
 	_tcp_client_stop();
+	return ret;
 }
 EXPORT_SYMBOL(send_invalidation_message);
 
