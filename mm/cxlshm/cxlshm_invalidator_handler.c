@@ -35,11 +35,12 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush);
 int invalidate_mem_area(void *data) 
 {
     int ret = 0;
-    char *received_copy = kzalloc(MAX_BUFFER_NET * sizeof(char), GFP_NOWAIT); //using nowait as this is IO
-    memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
+    
     while(!kthread_should_stop()) 
     {
         long completion_ret_val = wait_for_completion_interruptible(&ownership_transfer_arrival_var);
+        char *received_copy = kzalloc(MAX_BUFFER_NET * sizeof(char), GFP_NOWAIT); //using nowait as this is IO
+        memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
         if (completion_ret_val >= 0) 
         {
             spin_lock(&ctr_lock);
@@ -57,6 +58,7 @@ int invalidate_mem_area(void *data)
             }
             ret = _send_response("DONE");
             reinit_completion(&ownership_transfer_arrival_var);
+            kfree(received_copy);
         } 
         else 
         {
