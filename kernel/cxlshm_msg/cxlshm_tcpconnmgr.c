@@ -133,14 +133,9 @@ static int accept_connection(void *socket_in)
 					int ready = 0;
 					spin_lock(&ctr_lock);
 					memset(message_received, 0, sizeof(message_received));
-					if (strncmp(buf, enum_message_value[PAGE], strlen(enum_message_value[PAGE])) == 0) 
+					int msg_type = get_message_type(buf);
+					if (msg_type >= 0)
 					{
-						strscpy(page_ownership_message, buf, sizeof(buf));
-						ready = 1;
-					} 
-					else if (strncmp(buf, enum_message_value[WHOLE_VMA], strlen(enum_message_value[WHOLE_VMA])) == 0) 
-					{
-						strscpy(ownership_transfer_message, buf, sizeof(buf));
 						ready = 2;
 					}
 					else
@@ -148,15 +143,7 @@ static int accept_connection(void *socket_in)
 						pr_info(THIS_MOD "unknown message received. Discarded\n");
 					}
 					spin_unlock(&ctr_lock);
-					if (ready == 1) 
-					{
-						pr_info(THIS_MOD "page invalidation request %s\n", page_ownership_message);
-						if (page_ownership_transfer != NULL)
-							complete(page_ownership_transfer);
-						else
-							pr_info(THIS_MOD "page ownership completion is not set\n");
-					}
-					else if (ready == 2) 
+					if (ready == 2) 
 					{
 						pr_info(THIS_MOD "Invalidation request %s\n", ownership_transfer_message);
 						if (ownership_transfer_arrived != NULL)
