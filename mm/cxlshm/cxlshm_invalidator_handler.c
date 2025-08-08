@@ -47,7 +47,7 @@ int invalidate_mem_area(void *data)
             memset(ownership_transfer_message, 0, sizeof(ownership_transfer_message));
             spin_unlock(&ctr_lock);
             int message_type = get_message_type(received_copy);
-            pr_info(THIS_MOD "message_type %d\n", message_type);
+            pr_info(THIS_MOD "message: %s message_type %d\n", received_copy, message_type);
             ret = _send_response("DONE");
             reinit_completion(&ownership_transfer_arrival_var);
         } 
