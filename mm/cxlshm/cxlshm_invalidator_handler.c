@@ -49,12 +49,16 @@ int invalidate_mem_area(void *data)
             spin_unlock(&ctr_lock);
             int message_type = get_message_type(received_copy);
             pr_info(THIS_MOD "message: %s message_type %d\n", received_copy, message_type);
+            struct ownership *owner;
+            get_owner_info_on_mem(&owner);
+            pr_info(THIS_MOD "owner: %d\n", owner->owner_pid);
             if(message_type == WHOLE_VMA)
             {
-                struct ownership *owner;
-                get_owner_info_on_mem(&owner);
-                pr_info(THIS_MOD "owner: %d\n", owner->owner_pid);
                 flush_mem_task(owner->owner_pid);
+            }
+            else if (message_type == PAGE)
+            {
+                flush_mem_task_page(owner->owner_pid, 0x8e0600UL);
             }
             ret = _send_response("DONE");
             reinit_completion(&ownership_transfer_arrival_var);
@@ -70,7 +74,7 @@ int invalidate_mem_area(void *data)
     return ret;
 }
 
-int invalidate_mem_page(void *data) 
+int invalidate_mem_pagex(void *data) 
 {
     int ret = 0;
     while(!kthread_should_stop()) 

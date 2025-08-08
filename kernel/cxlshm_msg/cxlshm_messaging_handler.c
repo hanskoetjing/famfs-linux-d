@@ -47,7 +47,7 @@ int send_invalidation_message(struct ownership *owner, int type)
 			strscpy(received_copy, response_received, sizeof(response_received));
 			memset(response_received, 0, sizeof(response_received));
 			spin_unlock(&client_lock);
-			if (strncmp(received_copy, "DONE", 4) == 0) {
+			if (strncmp(received_copy, enum_message_value[DONE], strlen(enum_message_value[DONE])) == 0) {
 				pr_info(THIS_MOD "ownership transfer completed\n");
 				ret = 1;
 			}
