@@ -55,7 +55,12 @@ int is_allottable(pid_t requestor_pid) {
 		else
 		{
 			pr_info(THIS_MOD "owned by the other process, possibly in other host\n");
-			return send_invalidation_message(owner, WHOLE_VMA);
+			int ownership_transfer_status = send_invalidation_message(owner, WHOLE_VMA);
+			if(ownership_transfer_status == 1)
+			{
+				set_owner_info_on_mem(NULL);
+			}
+			return requestor_pid;
 		}
 	}
 }

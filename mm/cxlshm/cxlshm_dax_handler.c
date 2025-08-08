@@ -13,6 +13,7 @@
 #include <asm-generic/memory_model.h>
 #include <linux/mm_types.h>
 #include <asm-generic/int-ll64.h>
+#include <vdso/limits.h>
 
 #include <linux/dax.h>
 #include "../../drivers/dax/dax-private.h"
@@ -123,6 +124,23 @@ int set_owner_info_on_mem(struct ownership *owner)
 		int owner_port;
 		process_location_info(&ip_4_addr, &owner_port);
 		new_owner->port = owner_port;
+		struct mm_struct *mm = current->mm;
+		if (mm == NULL) 
+			return -1;
+		struct vm_area_struct *vma;
+		struct vm_area_struct *this_vma;
+		MA_STATE(mas, &mm->mm_mt, 0, 0);
+		mas_for_each(&mas, vma, ULONG_MAX) 
+		{
+			if (vma->vm_flags & VM_CXLDSM || vma->vm_flags & VM_CXLSHM) 
+			{
+				this_vma = vma;
+				break;
+			}
+		}
+		new_owner->vm_start = this_vma->vm_start;
+		new_owner->vm_end = this_vma->vm_end;
+		pr_info(THIS_MOD "vm_start: 0x%lx vm_end: 0x%lx\n", new_owner->vm_start, new_owner->vm_end);
 		strscpy(new_owner->ip_4_addr, ip_4_addr, 16);
 		memcpy(alloc_table_start, new_owner, sizeof(struct ownership));
 		kfree(ip_4_addr);
