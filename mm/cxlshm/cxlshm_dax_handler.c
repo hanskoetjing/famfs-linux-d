@@ -35,6 +35,7 @@ int get_cxl_dax_dev(char *device_path_param);
 int read_owner_info_on_mem(char *device_path_param);
 int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn);
 void get_current_device_path(char **dev_path);
+int process_location_info(char **address, int *port);
 int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot);

@@ -46,7 +46,7 @@ int is_allottable(pid_t requestor_pid) {
 	else
 	{
 		pr_info(THIS_MOD "owner on memory: %d. Requestor pid: %d\n", owner->owner_pid, requestor_pid);
-		if (owner->owner_pid == requestor_pid && owner->port == port && strncmp(owner->ip_4_addr, address, MAX(strlen(owner->ip_4_addr), strlen(address))) == 0)
+		if (owner->owner_pid == requestor_pid)
 		{
 			/* owned by itself */
 			pr_info(THIS_MOD "owned by the caller\n");
