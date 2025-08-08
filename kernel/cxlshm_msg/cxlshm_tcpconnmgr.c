@@ -413,8 +413,6 @@ SYSCALL_DEFINE1(send_response, char __user *, message)
 
 SYSCALL_DEFINE0(tcp_server_stop)
 {
-	if (client_socket)
-		sock_release(client_socket);
 	return _tcp_server_stop();
 }
 
