@@ -34,6 +34,7 @@ enum message_type {
 };
 
 extern const char * const enum_message_value[];
+extern char this_host[MAX_LOCATION_LENGTH];
 
 //cxlshm_dax_handler
 int get_cxl_dax_dev(char *device_path_param);

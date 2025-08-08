@@ -22,6 +22,7 @@
 #define THIS_MOD "cxlshm_ownership_handler: "
 
 char this_host[MAX_LOCATION_LENGTH] = {0};
+EXPORT_SYMBOL(this_host);
 
 
 int change_ownership(pid_t current_owner, pid_t requestor);

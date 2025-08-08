@@ -48,6 +48,12 @@ int invalidate_mem_area(void *data)
             spin_unlock(&ctr_lock);
             int message_type = get_message_type(received_copy);
             pr_info(THIS_MOD "message: %s message_type %d\n", received_copy, message_type);
+            if(message_type == PAGE)
+            {
+                struct ownership *owner;
+                get_owner_info_on_mem(&owner);
+                flush_mem_task(owner->owner_pid);
+            }
             ret = _send_response("DONE");
             reinit_completion(&ownership_transfer_arrival_var);
         } 
