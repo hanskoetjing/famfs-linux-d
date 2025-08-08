@@ -265,9 +265,8 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                         pte_unmap_unlock(ptep, sp);
                         break;
                     }
-                    up_read(&(this_mm->mmap_lock));
-                    break;
                 }
+                up_read(&(this_mm->mmap_lock));
             } 
             else 
             {
