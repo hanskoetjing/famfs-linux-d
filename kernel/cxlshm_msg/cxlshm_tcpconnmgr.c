@@ -127,7 +127,7 @@ static int accept_connection(void *socket_in)
 			connected_client_socket = new_socket;
 			while(!kthread_should_stop()) 
 			{
-				len = kernel_recvmsg(new_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
+				len = kernel_recvmsg(new_socket, &hdr, &iov, 1, sizeof(buf) - 1, MSG_DONTWAIT);
 				if (len > 0)
 				{
 					int ready = 0;
@@ -171,7 +171,7 @@ static int accept_connection(void *socket_in)
 				else if (len == -EAGAIN) 
 				{
 					pr_info(THIS_MOD "socket not available\n");
-					msleep(10);
+					continue;
 				}
 				else
 				{
