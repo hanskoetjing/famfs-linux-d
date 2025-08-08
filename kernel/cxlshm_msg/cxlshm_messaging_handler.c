@@ -78,11 +78,6 @@ int get_message_type(char *message_str)
 	for (; i < SENTINEL_ONLY; i++) 
 	{
 		if(strncmp(message_str, enum_message_value[i], strlen(enum_message_value[i])) == 0)
-		{
-			int a = strncmp(message_str, enum_message_value[i], strlen(enum_message_value[i]));
-			pr_info(THIS_MOD "DEBUG: strncmp result: %d\n", a);
-			int ba = strncmp(message_str, enum_message_value[i], strlen(enum_message_value[i] + 1));
-			pr_info(THIS_MOD "DEBUG: strncmp+1 result: %d\n", b);
 			break;
 	}
 
