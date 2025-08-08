@@ -6,6 +6,7 @@
 
 #define MAX_TIMEOUT_MSEC		3000
 #define FILE_PATH_LENGTH        32
+#define MAX_LOCATION_LENGTH        32
 #define MAX(a, b) ((a) >= (b) ? (a) : (b))
 
 struct ownership { //TODO: add version to the struct...
@@ -25,6 +26,13 @@ struct mem_alloc {
 	struct dax_device *cxl_dax_dev;
 };
 
+enum message_type {
+	PAGE,
+	WHOLE_VMA
+};
+
+const char * const enum_message_value[] = {"PAGE", "WHOLE_VMA"};
+
 //cxlshm_dax_handler
 int get_cxl_dax_dev(char *device_path_param);
 int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn);
@@ -38,6 +46,7 @@ vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf);
 int is_allottable(pid_t requestor_pid);
 int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port);
 int is_allottable_page(pid_t requestor_pid, struct vm_fault *vmf);
+void get_location_info(char **location_info_string);
 
 
 #endif

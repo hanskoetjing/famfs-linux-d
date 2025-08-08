@@ -86,10 +86,10 @@ int invalidate_mem_page(void *data)
             memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
             pr_info(THIS_MOD "got page invalidation request\n");
             spin_lock(&ctr_lock);
-            pr_info(THIS_MOD "msg: %s\n", page_ownership_message);
             strscpy(received_copy, page_ownership_message, MAX_BUFFER_NET - 1);
             memset(page_ownership_message, 0, sizeof(page_ownership_message));
             spin_unlock(&ctr_lock);
+            pr_info(THIS_MOD "msg: %s\n", received_copy);
             if (strncmp(received_copy, "PFN:", 4) == 0) 
             {
                 strsep(&received_copy, ":");

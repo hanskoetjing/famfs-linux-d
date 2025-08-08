@@ -3,6 +3,7 @@
 
 #define MAX_BUFFER_NET          128
 #define DEFAULT_PORT            57580
+#define DEFAULT_HOST            "127.0.0.1"
 
 extern int open_port;
 extern char message_received[MAX_BUFFER_NET];
@@ -25,5 +26,8 @@ int _send_response(char *response_message);
 int _tcp_client_start(char *ip_4_addr, int port);
 int _send_message(char *message);
 int _tcp_client_stop(void);
+
+//messaging
+int send_invalidation_message(struct ownership *owner, int type);
 
 #endif

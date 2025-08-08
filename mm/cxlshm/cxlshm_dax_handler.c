@@ -114,15 +114,67 @@ EXPORT_SYMBOL(get_owner_info_on_mem);
 int set_owner_info_on_mem(struct ownership *owner)
 {
 	read_owner_info_on_mem(device_path);
-	if (owner->owner_pid <= 0)
+	if (owner == NULL)
 	{
-		return -EINVAL;
+		struct ownership *new_owner = kzalloc(sizeof(struct ownership), GFP_KERNEL);
+		new_owner->owner_pid = task_pid_nr(current);
+		char *ip_4_addr;
+		int owner_port;
+		process_location_info(&ip_4_addr, &owner_port);
+		new_owner->port = owner_port;
+		strscpy(new_owner->ip_4_addr, ip_4_addr, 16);
+		memcpy(alloc_table_start, new_owner, sizeof(struct ownership));
+		kfree(ip_4_addr);
+		kfree(new_owner);
 	}
-	pr_info(THIS_MOD "writing owner info on special area on mem\n");
-	memcpy(alloc_table_start, owner, sizeof(struct ownership));
+	else
+	{
+		if (owner->owner_pid <= 0)
+		{
+			return -EINVAL;
+		}
+		pr_info(THIS_MOD "writing owner info on special area on mem\n");
+		memcpy(alloc_table_start, owner, sizeof(struct ownership));
+	}
 	return 0;
 }
 EXPORT_SYMBOL(set_owner_info_on_mem);
+
+int process_location_info(char **address, int *port)
+{
+	/*set host identifier on ownership data*/
+	char *temp_location_processing;
+	get_location_info(&temp_location_processing);
+	*port = 57580;
+	*address = (char *)kzalloc(sizeof(char) * 16, GFP_KERNEL);
+	if (strlen(temp_location_processing) == 0)
+	{
+		strscpy(*address, "127.0.0.1", 16);
+	}
+	else 
+	{
+		pr_info(THIS_MOD "location: %s\n", temp_location_processing);
+		char *ip_4_addr_from_user = strsep(&temp_location_processing, ":");
+		if (ip_4_addr_from_user != NULL) 
+		{
+			int port_from_user = 0;
+			int strtoint_ret = kstrtoint(temp_location_processing, 10, &port_from_user);
+			if (strtoint_ret >= 0) 
+			{
+				strscpy(*address, ip_4_addr_from_user, 16);
+				*port = port_from_user;
+			}
+		}
+		else
+		{
+			strscpy(*address, "127.0.0.1", 16);
+		}
+	}
+	
+	kfree(temp_location_processing);
+	return 0;
+
+}
 
 int get_cxl_dax_dev(char *device_path_param) 
 {
