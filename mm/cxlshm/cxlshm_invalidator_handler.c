@@ -266,7 +266,7 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                     }
                 }
                 up_read(&(this_mm->mmap_lock));
-                if (found = 1)
+                if (found == 1)
                 {
                     pr_info(THIS_MOD "address with pfn found\n");
                 }
