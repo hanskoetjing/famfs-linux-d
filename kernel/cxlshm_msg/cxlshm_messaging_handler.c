@@ -5,7 +5,6 @@
 #include <linux/string.h>
 #include <linux/types.h>
 #include <linux/ioport.h>
-#include <linux/rcupdate.h>
 #include <linux/sprintf.h>
 #include <linux/completion.h>
 #include <vdso/limits.h>
