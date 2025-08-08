@@ -138,7 +138,7 @@ static int accept_connection(void *socket_in)
 						strscpy(page_ownership_message, buf, sizeof(buf));
 						ready = 1;
 					} 
-					else if (strncmp(buf, "PID:", 4) == 0) 
+					else if (strncmp(buf, enum_message_value[WHOLE_VMA], strlen(enum_message_value[WHOLE_VMA])) == 0) 
 					{
 						strscpy(ownership_transfer_message, buf, sizeof(buf));
 						ready = 2;
