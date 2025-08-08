@@ -81,7 +81,7 @@ int get_message_type(char *message_str)
 			break;
 		i++;
 	}
-	if (enum_message_value[i] == null) 
+	if (enum_message_value[i] == NULL) 
 		return -EINVAL;
 	else
 		return i;
