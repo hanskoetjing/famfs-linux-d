@@ -8,6 +8,7 @@
 #include <linux/types.h>
 #include <linux/completion.h> 
 #include <linux/syscalls.h>
+#include <linux/wait.h>
 #include <asm-generic/int-ll64.h>
 #include "conn_manager.h"
 
@@ -105,8 +106,12 @@ static int accept_connection(void *socket_in)
 	pr_info(THIS_MOD "waiting for connection\n");
 	while(!kthread_should_stop()) 
 	{
-		kernel_accept(srv_socket, &new_socket, 0);
-		if (new_socket) 
+		long is_killable_accept = 
+			wait_event_killable_timeout(*(sk_sleep(srv_socket->sk)), kthread_should_stop(), msecs_to_jiffies(200));
+		if (is_killable_accept < 0)
+			break;
+		int ret = kernel_accept(srv_socket, &new_socket, SOCK_NONBLOCK);
+		if (ret == 0) 
 		{
 			struct sockaddr_in connected_server_addr;
 			struct msghdr hdr;
@@ -176,13 +181,15 @@ static int accept_connection(void *socket_in)
 				}
 				//overwrite buf data with NULL char
 				memset(buf, 0, sizeof(buf));
-				if (kthread_should_stop())
-					break;	
 			}
 			sock_release(new_socket);
 			new_socket = NULL;
 			connected_client_socket = NULL;
 			pr_info(THIS_MOD "done receiving data\n");
+		}
+		else if (ret == -EAGAIN)
+		{
+			continue;
 		}
 	}
 	pr_info(THIS_MOD "acceptor thread exit. Bye\n");
@@ -394,6 +401,8 @@ SYSCALL_DEFINE1(send_response, char __user *, message)
 
 SYSCALL_DEFINE0(tcp_server_stop)
 {
+	if (client_socket)
+		sock_release(client_socket);
 	return _tcp_server_stop();
 }
 
