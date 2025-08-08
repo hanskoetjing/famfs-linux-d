@@ -18,6 +18,8 @@
 
 #define THIS_MOD "cxlshm_messaging_handler: "
 
+extern const char * const enum_message_value[];
+
 int send_invalidation_message(struct ownership *owner, int type);
 
 /*return 0 on ownership taken over, otherwise error*/
