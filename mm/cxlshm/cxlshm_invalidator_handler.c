@@ -84,6 +84,7 @@ int invalidate_mem_page(void *data)
         long completion_ret_val = wait_for_completion_interruptible(&page_ownership_transfer_var);
         if (completion_ret_val >= 0) 
         {
+            pr_info(THIS_MOD "got page invalidation request\n");
             spin_lock(&ctr_lock);
             strscpy(received_copy, ownership_transfer_message, MAX_BUFFER_NET - 1);
             memset(ownership_transfer_message, 0, sizeof(ownership_transfer_message));
@@ -235,8 +236,6 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                 pr_info(THIS_MOD "Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
                 
                 pte_t *ptep;
-                unsigned long start = this_vma->vm_start;
-                unsigned long end = this_vma->vm_end;
                 unsigned long addr = 0;
                 struct mm_struct *this_mm = this_vma->vm_mm;
                 spinlock_t *sp;
