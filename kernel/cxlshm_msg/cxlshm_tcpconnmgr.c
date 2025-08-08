@@ -196,6 +196,7 @@ static int accept_connection(void *socket_in)
 			continue;
 		}
 	}
+	sock_release(srv_socket);
 	pr_info(THIS_MOD "acceptor thread exit. Bye\n");
 	return ret_val;
 }
@@ -227,10 +228,8 @@ int _tcp_server_stop(void) {
     if (task_is_running(acceptor_thread)) {
         thread_ret = kthread_stop(acceptor_thread);
     }
-	if (server_socket && thread_ret <= 0) {
-		sock_release(server_socket);
-		pr_info(THIS_MOD "release server socket on port %d\n", open_port);
-	}
+	pr_info(THIS_MOD "stop acceptor thread\n");
+
 	return 0;
 }
 EXPORT_SYMBOL(_tcp_server_stop);
