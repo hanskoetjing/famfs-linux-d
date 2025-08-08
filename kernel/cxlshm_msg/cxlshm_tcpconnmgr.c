@@ -210,13 +210,13 @@ int _send_response(char *response_message) {
 EXPORT_SYMBOL(_send_response);
 
 int _tcp_server_stop(void) {
-    if (task_is_running(acceptor_thread) || acceptor_thread->__state == TASK_NORMAL) {
+    if (task_is_running(acceptor_thread)) {
         kthread_stop(acceptor_thread);
     }
 	if (server_socket) {
-		pr_info(THIS_MOD "release server socket on port %d\n", open_port);
 		sock_release(server_socket);
 		server_socket = NULL;
+		pr_info(THIS_MOD "release server socket on port %d\n", open_port);
 	}
 	return 0;
 }
