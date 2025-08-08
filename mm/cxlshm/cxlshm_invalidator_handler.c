@@ -42,7 +42,7 @@ int invalidate_mem_area(void *data)
         if (completion_ret_val >= 0) 
         {
             spin_lock(&ctr_lock);
-            strscpy(received_copy, ownership_transfer_message, sizeof(received_copy));
+            strscpy(received_copy, ownership_transfer_message, MAX_BUFFER_NET - 1);
             memset(ownership_transfer_message, 0, sizeof(ownership_transfer_message));
             spin_unlock(&ctr_lock);
             if (strncmp(received_copy, "PID:", 4) == 0) 
@@ -89,7 +89,6 @@ int invalidate_mem_page(void *data)
             spin_unlock(&ctr_lock);
             if (strncmp(received_copy, "PFN:", 4) == 0) 
             {
-                pr_info(THIS_MOD "page invalidation message received: %s\n", received_copy);
                 strsep(&received_copy, ":");
                 char *pfn_str = strsep(&received_copy, ":");
                 strsep(&received_copy, ":");
@@ -113,7 +112,7 @@ int invalidate_mem_page(void *data)
                 pr_info(THIS_MOD "received pid %d pfn 0x%llx\n", pid_received, pfn_received);
                 if (ret >= 0) 
                 {
-                    //flush_mem_task(pid_received);
+                    flush_mem_task_page(pid_received, pfn_to_invalidate);
                 } 
                 else 
                 {
@@ -182,6 +181,88 @@ int flush_mem_task(pid_t pid)
             if (this_vma) 
             {
                 pr_info(THIS_MOD "Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
+            } 
+            else 
+            {
+                pr_info(THIS_MOD "VMA not found\n");
+                ret = -1;
+            }
+        } 
+        else 
+        {
+            pr_info(THIS_MOD "task not found\n");
+            ret = -1;
+        }
+	} 
+    else 
+    {
+		ret = -1;
+	}
+	return ret;
+}
+
+int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush) 
+{
+	int ret = 0;
+	struct vm_area_struct *this_vma = NULL;
+    struct task_struct *the_task = NULL;
+    struct ownership *owner_on_mem;
+    struct mm_struct *mm = NULL;
+	if (pid != -1) 
+    {
+		the_task = get_task_from_int_pid(pid);
+		if (the_task != NULL) 
+        {
+            get_owner_info_on_mem(&owner_on_mem);
+            struct mm_struct *mm = the_task->mm;
+            if (mm == NULL) 
+                return -1;
+            struct vm_area_struct *vma;
+            MA_STATE(mas, &mm->mm_mt, 0, 0);
+            
+            pid_t pid_on_mem = owner_on_mem->owner_pid;
+            pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", pid_on_mem, owner_on_mem->vm_start);
+            mas_for_each(&mas, vma, ULONG_MAX) {
+                if (vma->vm_flags & VM_CXLDSM) 
+                {
+                    this_vma = vma;
+                    pr_info(THIS_MOD "found vma addr: 0x%lx\n", vma->vm_start);
+                    break;
+                }
+            }
+            if (this_vma) 
+            {
+                pr_info(THIS_MOD "Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
+                
+                pte_t *ptep;
+                unsigned long start = this_vma->vm_start;
+                unsigned long end = this_vma->vm_end;
+                unsigned long addr = 0;
+                mm = this_vma->vm_mm;
+                spinlock_t *sp;
+                for (addr = vma->vm_start; addr < vma->vm_end; addr += PAGE_SIZE)
+                {
+                    pgd_t *pgd = pgd_offset(mm, addr);
+                    if (pgd_none(*pgd) || pgd_bad(*pgd))
+                        continue;
+                    p4d_t *p4d = p4d_offset(pgd, addr);
+                    if (p4d_none(*p4d) || p4d_bad(*p4d))
+                        continue;
+                    pud_t *pud = pud_offset(p4d, addr);
+                    if (pud_none(*pud) || pud_bad(*pud))
+                        continue;
+                    pmd_t *pmd = pmd_offset(pud, addr);
+                    if (pmd_none(*pmd) || pmd_bad(*pmd))
+                        continue;
+                    ptep = pte_offset_map_lock(mm, pmd, addr, &sp);
+                    pr_info(THIS_MOD "pfn in this pte: 0x%lx\n", pte_pfn(*ptep));
+                    if (pte_pfn(*ptep) == pfn_to_flush.val)
+                    {
+                        break;
+                    }
+                    pte_unmap_unlock(ptep, sp);
+                    break;
+                }
             } 
             else 
             {
