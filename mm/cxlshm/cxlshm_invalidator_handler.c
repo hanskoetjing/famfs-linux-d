@@ -239,6 +239,7 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                 unsigned long addr = 0;
                 struct mm_struct *this_mm = this_vma->vm_mm;
                 spinlock_t *sp;
+                down_read(&(this_mm->mmap_lock));
                 for (addr = vma->vm_start; addr < vma->vm_end; addr += PAGE_SIZE)
                 {
                     pgd_t *pgd = pgd_offset(this_mm, addr);
@@ -258,10 +259,11 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                     if (pte_pfn(*ptep) == pfn_to_flush.val)
                     {
                         pr_info(THIS_MOD "got matching pfn\n");
+                        ptep_clear_flush(vma, addr, ptep);
                         pte_unmap_unlock(ptep, sp);
                         break;
                     }
-                    
+                    up_read(&(this_mm->mmap_lock));
                     break;
                 }
             } 
