@@ -120,7 +120,7 @@ static int accept_connection(void *socket_in)
 			pr_info(THIS_MOD "connected! client: %pI4\n", &connected_server_addr.sin_addr);
 			int len = -1;
 			connected_client_socket = new_socket;
-			for(;;) 
+			while(!kthread_should_stop()) 
 			{
 				len = kernel_recvmsg(new_socket, &hdr, &iov, 1, sizeof(buf) - 1, 0);
 				if (len > 0)
