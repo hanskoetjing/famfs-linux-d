@@ -1,6 +1,8 @@
 #ifndef CONN_MGR_K_H   /* Include guard */
 #define CONN_MGR_K_H
 
+#include "../../mm/cxlshm/cxlshm_handler_private.h" 
+
 #define MAX_BUFFER_NET          128
 #define DEFAULT_PORT            57580
 #define DEFAULT_HOST            "127.0.0.1"
