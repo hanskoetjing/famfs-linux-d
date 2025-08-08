@@ -60,12 +60,12 @@ int send_invalidation_message(struct ownership *owner, int type)
 		else if (completion_ret_val == 0) 
 		{
 			pr_info(THIS_MOD "timeout waiting for response\n");
-			ret = 0;
+			return 0;
 		} 
 		else 
 		{
 			pr_info(THIS_MOD "interrupted\n");
-			ret = -EAGAIN;
+			return -EAGAIN;
 		}
 	}
 	_tcp_client_stop();
