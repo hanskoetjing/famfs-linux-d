@@ -219,12 +219,13 @@ int _send_response(char *response_message) {
 EXPORT_SYMBOL(_send_response);
 
 int _tcp_server_stop(void) {
+	int thread_ret = 0;
     if (task_is_running(acceptor_thread)) {
-        kthread_stop(acceptor_thread);
+        thread_ret = kthread_stop(acceptor_thread);
     }
-	if (server_socket) {
+	if (server_socket && thread_ret <= 0) {
 		sock_release(server_socket);
-		server_socket = NULL;
+		server_socket == NULL;
 		pr_info(THIS_MOD "release server socket on port %d\n", open_port);
 	}
 	return 0;
