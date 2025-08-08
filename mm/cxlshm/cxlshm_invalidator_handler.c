@@ -77,15 +77,16 @@ int invalidate_mem_area(void *data)
 int invalidate_mem_page(void *data) 
 {
     int ret = 0;
-    char *received_copy = kzalloc(MAX_BUFFER_NET * sizeof(char), GFP_NOWAIT); //using nowait as this is IO
-    memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
     while(!kthread_should_stop()) 
     {
         long completion_ret_val = wait_for_completion_interruptible(&page_ownership_transfer_var);
         if (completion_ret_val >= 0) 
         {
+            char *received_copy = kzalloc(MAX_BUFFER_NET * sizeof(char), GFP_NOWAIT); //using nowait as this is IO
+            memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
             pr_info(THIS_MOD "got page invalidation request\n");
             spin_lock(&ctr_lock);
+            pr_info(THIS_MOD "msg: %s\n", page_ownership_message);
             strscpy(received_copy, page_ownership_message, MAX_BUFFER_NET - 1);
             memset(page_ownership_message, 0, sizeof(page_ownership_message));
             spin_unlock(&ctr_lock);
@@ -118,11 +119,12 @@ int invalidate_mem_page(void *data)
                 } 
                 else 
                 {
-                    
+                    pr_info(THIS_MOD "page not found\n");
                 }
                 ret = _send_response("DONE");
             }
             reinit_completion(&ownership_transfer_arrival_var);
+            kfree(received_copy);
         } 
         else 
         {
@@ -130,7 +132,7 @@ int invalidate_mem_page(void *data)
             return -EINTR;
         }
     }
-    kfree(received_copy);
+    
     pr_info(THIS_MOD "thread returns\n");
     return ret;
 }
