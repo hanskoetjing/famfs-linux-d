@@ -52,6 +52,7 @@ int invalidate_mem_area(void *data)
             {
                 struct ownership *owner;
                 get_owner_info_on_mem(&owner);
+                pr_info(THIS_MOD "owner: %d\n", owner->owner_pid);
                 flush_mem_task(owner->owner_pid);
             }
             ret = _send_response("DONE");
