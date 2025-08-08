@@ -7,6 +7,7 @@
 extern int open_port;
 extern char message_received[MAX_BUFFER_NET];
 extern char ownership_transfer_message[MAX_BUFFER_NET];
+extern char page_ownership_message[MAX_BUFFER_NET];
 extern char response_received[MAX_BUFFER_NET];
 extern spinlock_t ctr_lock;
 extern spinlock_t client_lock;
