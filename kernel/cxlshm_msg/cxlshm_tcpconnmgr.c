@@ -30,7 +30,7 @@ EXPORT_SYMBOL(message_received);
 char response_received[MAX_BUFFER_NET] = {0};
 EXPORT_SYMBOL(response_received);
 char ownership_transfer_message[MAX_BUFFER_NET] = {0};
-EXPORT_SYMBOL(ownership_transfer_message);page_ownership_message
+EXPORT_SYMBOL(ownership_transfer_message);
 char page_ownership_message[MAX_BUFFER_NET] = {0};
 EXPORT_SYMBOL(page_ownership_message);
 char client_ip_4_addr[16] = {0};
