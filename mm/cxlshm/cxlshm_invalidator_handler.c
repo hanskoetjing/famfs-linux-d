@@ -13,6 +13,7 @@
 #include <linux/pid.h>
 #include <linux/pid_types.h>
 #include <linux/kthread.h>
+#include <linux/pfn_t.h>
 
 #include <linux/cxlshm_msg.h>
 #include "../../drivers/dax/dax-private.h"
@@ -181,7 +182,7 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                 struct mm_struct *this_mm = this_vma->vm_mm;
                 spinlock_t *sp;
                 int found = 0;
-                u64 phys_addr = pfn_to_flush.val << PAGE_SHIFT;
+                unsigned long pfn_phys = pfn_t_to_pfn(pfn_to_flush);
                 down_read(&(this_mm->mmap_lock));
                 for (addr = vma->vm_start; addr < vma->vm_end; addr += PAGE_SIZE)
                 {
@@ -198,8 +199,8 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                     if (pmd_none(*pmd) || pmd_bad(*pmd))
                         continue;
                     ptep = pte_offset_map_lock(this_mm, pmd, addr, &sp);
-                    pr_info(THIS_MOD "pte 0x%llx pte to flush: 0x%llx\n", pte_pfn(*ptep), phys_addr);
-                    if (pte_pfn(*ptep) == phys_addr)
+                    pr_info(THIS_MOD "pte 0x%llx pte to flush: 0x%llx\n", pte_pfn(*ptep), pfn_phys);
+                    if (pte_pfn(*ptep) == pfn_phys)
                     {
                         ptep_clear_flush(vma, addr, ptep);
                         found = 1;
