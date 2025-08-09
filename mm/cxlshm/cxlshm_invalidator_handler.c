@@ -59,7 +59,8 @@ int invalidate_mem_area(void *data)
             else if (message_type == PAGE)
             {
                 pfn_t p;
-                p.val = 0x8e0600ULL;
+                p.val = get_pfn_by_offset(owner->offset);
+                pr_info(THIS_MOD "pfn on this: 0x%llx");
                 flush_mem_task_page(owner->owner_pid, p);
             }
             ret = _send_response("DONE");
