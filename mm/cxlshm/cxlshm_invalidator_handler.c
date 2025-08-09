@@ -15,6 +15,7 @@
 #include <linux/kthread.h>
 #include <linux/pfn_t.h>
 #include <asm/tlb.h>
+#include <asm/tlbflush.h>
 
 #include <linux/cxlshm_msg.h>
 #include "../../drivers/dax/dax-private.h"
@@ -114,14 +115,14 @@ int flush_mem_task(pid_t pid)
             get_owner_info_on_mem(&owner_on_mem);
             pid_t pid_on_mem = owner_on_mem->owner_pid;
             pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", pid_on_mem, owner_on_mem->vm_start);
-            mas_for_each(&mas, vma, ULONG_MAX) {
-                pr_info(THIS_MOD "vm_start: 0x%lx vm_end: 0x%lx\n", vma->vm_start, vma->vm_end);
+            mas_for_each(&mas, vma, ULONG_MAX) 
+            {
                 if (vma->vm_flags & VM_CXLSHM && vma->vm_start == owner_on_mem->vm_start && vma->vm_end == owner_on_mem->vm_end) 
                 {
                     this_vma = vma;
                     //invalidate_vma(vma);
-                    zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporar
-                    flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
+                    //zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporar
+                    //flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
                     break;
                 }
             }
@@ -131,7 +132,7 @@ int flush_mem_task(pid_t pid)
                 struct mm_struct *mm = this_vma->vm_mm;
                 struct mmu_gather tlb;
                 tlb_gather_mmu(&tlb, mm);
-                change_vma_protection_range(&tlb, this_vma, this_vma->vm_start, this_vma->vm_end, PAGE_NONE, MM_CP_UFFD_WP);
+                change_vma_protection_range(&tlb, this_vma, this_vma->vm_start, (this_vma->vm_start + owner_on_mem->offset), PAGE_NONE, MM_CP_UFFD_WP);
                 tlb_finish_mmu(&tlb);
                 flush_tlb_mm(mm);
                 flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
