@@ -543,6 +543,39 @@ long change_protection_range_vma(struct mmu_gather *tlb,
 	return pages;
 }
 
+/*
+ * change protection with prot from caller 
+ */
+long change_vma_protection_range(struct mmu_gather *tlb,
+		       struct vm_area_struct *vma, unsigned long start,
+		       unsigned long end, pgprot_t newprot, unsigned long cp_flags)
+{
+	long pages;
+
+	BUG_ON((cp_flags & MM_CP_UFFD_WP_ALL) == MM_CP_UFFD_WP_ALL);
+
+#ifdef CONFIG_NUMA_BALANCING
+	/*
+	 * Ordinary protection updates (mprotect, uffd-wp, softdirty tracking)
+	 * are expected to reflect their requirements via VMA flags such that
+	 * vma_set_page_prot() will adjust vma->vm_page_prot accordingly.
+	 */
+	if (cp_flags & MM_CP_PROT_NUMA)
+		newprot = PAGE_NONE;
+#else
+	WARN_ON_ONCE(cp_flags & MM_CP_PROT_NUMA);
+#endif
+
+	if (is_vm_hugetlb_page(vma))
+		pages = hugetlb_change_protection(vma, start, end, newprot,
+						  cp_flags);
+	else
+		pages = change_protection_range(tlb, vma, start, end, newprot,
+						cp_flags);
+
+	return pages;
+}
+
 long change_protection(struct mmu_gather *tlb,
 		       struct vm_area_struct *vma, unsigned long start,
 		       unsigned long end, unsigned long cp_flags)
