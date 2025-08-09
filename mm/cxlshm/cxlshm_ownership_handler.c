@@ -58,7 +58,7 @@ int is_allottable(pid_t requestor_pid, struct vm_fault *vmf, int type)
 		else
 		{
 			pr_info(THIS_MOD "owned by the other process, possibly in other host\n");
-			int ownership_transfer_status = send_invalidation_message(owner, WHOLE_VMA);
+			int ownership_transfer_status = send_invalidation_message(owner, type);
 			if(ownership_transfer_status == 1)
 			{
 				set_new_owner_info(&owner, task_pid_nr(current), vmf->vma->vm_start, vmf->vma->vm_end, vmf->pgoff);
