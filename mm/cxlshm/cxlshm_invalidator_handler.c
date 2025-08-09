@@ -120,7 +120,8 @@ int flush_mem_task(pid_t pid)
                 {
                     this_vma = vma;
                     //invalidate_vma(vma);
-                    //zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporar
+                    zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporar
+                    flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
                     break;
                 }
             }
@@ -132,7 +133,6 @@ int flush_mem_task(pid_t pid)
                 tlb_gather_mmu(&tlb, mm);
                 change_vma_protection_range(&tlb, this_vma, this_vma->vm_start, this_vma->vm_end, PAGE_NONE, MM_CP_UFFD_WP);
                 tlb_finish_mmu(&tlb);
-                zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start);
                 flush_tlb_mm(mm);
                 flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
                 pr_info(THIS_MOD "Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
