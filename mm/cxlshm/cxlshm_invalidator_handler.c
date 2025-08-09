@@ -120,9 +120,11 @@ int flush_mem_task(pid_t pid)
                 if (vma->vm_flags & VM_CXLSHM && vma->vm_start == owner_on_mem->vm_start && vma->vm_end == owner_on_mem->vm_end) 
                 {
                     this_vma = vma;
-                    //invalidate_vma(vma);
-                    //zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporar
-                    //flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
+                    invalidate_vma(vma);
+                    zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporar
+                    flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
+                    struct mm_struct *mm = this_vma->vm_mm;
+                    flush_tlb_mm(mm);
                     break;
                 }
             }
