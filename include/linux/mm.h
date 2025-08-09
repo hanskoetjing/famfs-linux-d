@@ -2577,6 +2577,12 @@ extern long change_protection(struct mmu_gather *tlb,
 extern long change_protection_range_vma(struct mmu_gather *tlb,
 		struct vm_area_struct *vma, unsigned long addr,
 		unsigned long end, pgprot_t newprot, unsigned long cp_flags);
+/*
+ * change protection with prot from caller 
+ */
+extern long change_vma_protection_range(struct mmu_gather *tlb,
+		       struct vm_area_struct *vma, unsigned long start,
+		       unsigned long end, pgprot_t newprot, unsigned long cp_flags);
 
 extern int mprotect_fixup(struct vma_iterator *vmi, struct mmu_gather *tlb,
 	  struct vm_area_struct *vma, struct vm_area_struct **pprev,
