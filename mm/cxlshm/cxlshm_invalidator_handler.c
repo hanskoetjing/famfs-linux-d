@@ -14,6 +14,7 @@
 #include <linux/pid_types.h>
 #include <linux/kthread.h>
 #include <linux/pfn_t.h>
+#include <asm/tlb.h>
 
 #include <linux/cxlshm_msg.h>
 #include "../../drivers/dax/dax-private.h"
