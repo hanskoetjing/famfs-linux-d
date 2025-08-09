@@ -53,6 +53,8 @@ int is_allottable(pid_t requestor_pid, struct vm_fault *vmf, int type)
 		{
 			/* owned by itself */
 			pr_info(THIS_MOD "owned by the caller\n");
+			set_new_owner_info(&owner, task_pid_nr(current), vmf->vma->vm_start, vmf->vma->vm_end, vmf->pgoff);
+			set_owner_info_on_mem(owner);
 			return requestor_pid;
 		}
 		else
