@@ -27,7 +27,6 @@ DECLARE_COMPLETION(ownership_transfer_arrival_var);
 DECLARE_COMPLETION(page_ownership_transfer_var);
 
 int invalidate_mem_area(void *data);
-int invalidate_mem_page(void *data);
 struct task_struct *get_task_from_int_pid(pid_t pid);
 int flush_mem_task(pid_t pid);
 int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush);
@@ -76,68 +75,6 @@ int invalidate_mem_area(void *data)
     return ret;
 }
 
-int invalidate_mem_pagex(void *data) 
-{
-    int ret = 0;
-    while(!kthread_should_stop()) 
-    {
-        long completion_ret_val = wait_for_completion_interruptible(&page_ownership_transfer_var);
-        if (completion_ret_val >= 0) 
-        {
-            char *received_copy = kzalloc(MAX_BUFFER_NET * sizeof(char), GFP_NOWAIT); //using nowait as this is IO
-            memset(received_copy, 0, MAX_BUFFER_NET * sizeof(char));
-            pr_info(THIS_MOD "got page invalidation request\n");
-            spin_lock(&ctr_lock);
-            strscpy(received_copy, page_ownership_message, MAX_BUFFER_NET - 1);
-            memset(page_ownership_message, 0, sizeof(page_ownership_message));
-            spin_unlock(&ctr_lock);
-            pr_info(THIS_MOD "msg: %s\n", received_copy);
-            if (strncmp(received_copy, "PFN:", 4) == 0) 
-            {
-                strsep(&received_copy, ":");
-                char *pfn_str = strsep(&received_copy, ":");
-                strsep(&received_copy, ":");
-                char *pid_str = strsep(&received_copy, ":");
-                pid_t pid_received = 0;
-                int ret = kstrtoint(pid_str, 10, &pid_received);
-                if (ret < 0)
-                {
-                    pid_received = 0;
-                    pr_info(THIS_MOD "failed to process PID: %s, returned: %d\n", pid_str, ret);
-                }
-                u64 pfn_received = 0;
-                ret = kstrtoull(pfn_str, 16, &pfn_received);
-                if (ret < 0)
-                {
-                    pfn_received = 0;
-                    pr_info(THIS_MOD "failed to process PFN: %s, returned: %d\n", pfn_str, ret);
-                }
-                pfn_t pfn_to_invalidate;
-                pfn_to_invalidate.val = pfn_received;
-                pr_info(THIS_MOD "received pid %d pfn 0x%llx\n", pid_received, pfn_received);
-                if (ret >= 0) 
-                {
-                    flush_mem_task_page(pid_received, pfn_to_invalidate);
-                } 
-                else 
-                {
-                    pr_info(THIS_MOD "page not found\n");
-                }
-                ret = _send_response("DONE");
-            }
-            reinit_completion(&ownership_transfer_arrival_var);
-            kfree(received_copy);
-        } 
-        else 
-        {
-            pr_info(THIS_MOD "interrupted\n");
-            return -EINTR;
-        }
-    }
-    
-    pr_info(THIS_MOD "thread returns\n");
-    return ret;
-}
 
 struct task_struct *get_task_from_int_pid(pid_t pid) 
 {
@@ -244,6 +181,7 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                 struct mm_struct *this_mm = this_vma->vm_mm;
                 spinlock_t *sp;
                 int found = 0;
+                u64 phys_addr = pfn_to_flush.val << PAGE_SHIFT;
                 down_read(&(this_mm->mmap_lock));
                 for (addr = vma->vm_start; addr < vma->vm_end; addr += PAGE_SIZE)
                 {
@@ -260,7 +198,7 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                     if (pmd_none(*pmd) || pmd_bad(*pmd))
                         continue;
                     ptep = pte_offset_map_lock(this_mm, pmd, addr, &sp);
-                    if (pte_pfn(*ptep) == pfn_to_flush.val)
+                    if (pte_pfn(*ptep) == phys_addr)
                     {
                         ptep_clear_flush(vma, addr, ptep);
                         found = 1;
@@ -305,7 +243,6 @@ static int __init cxlshm_invalidator_init(void)
     set_ownership_completion(&ownership_transfer_arrival_var);
     set_page_ownership_completion(&page_ownership_transfer_var);
     invalidator_thread = kthread_run(invalidate_mem_area, (void *)data, "invalidate_mem_area");
-    //page_invalidator_thread = kthread_run(invalidate_mem_page, (void *)data_page, "invalidate_mem_page");
 
 	//init done
 	pr_info(THIS_MOD "loaded\n");
@@ -320,10 +257,7 @@ static void __exit cxlshm_invalidator_exit(void)
         pr_info(THIS_MOD "stop invalidator thread\n"); 
         kthread_stop(invalidator_thread);
     }
-    /*if (task_is_running(page_invalidator_thread)) {
-        pr_info(THIS_MOD "stop page invalidator thread\n"); 
-        kthread_stop(page_invalidator_thread);
-    }*/
+
 	//exit done
 	pr_info(THIS_MOD ": unloaded\n"); 
 }
