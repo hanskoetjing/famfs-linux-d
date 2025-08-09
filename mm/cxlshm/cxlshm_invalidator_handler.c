@@ -198,6 +198,7 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                     if (pmd_none(*pmd) || pmd_bad(*pmd))
                         continue;
                     ptep = pte_offset_map_lock(this_mm, pmd, addr, &sp);
+                    pr_info(THIS_MOD "pte 0x%llx pte to flush: 0x%llx\n", pte_pfn(*ptep), phys_addr);
                     if (pte_pfn(*ptep) == phys_addr)
                     {
                         ptep_clear_flush(vma, addr, ptep);
