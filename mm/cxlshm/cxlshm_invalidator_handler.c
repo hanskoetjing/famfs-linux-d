@@ -30,6 +30,10 @@ struct task_struct *get_task_from_int_pid(pid_t pid);
 int flush_mem_task(pid_t pid);
 int flush_mem_task_page(pid_t pid, unsigned long pfn_to_flush);
 
+/*
+ * This is the invalidator thread. it will run and sleep until a completion event from the connection manager.
+ * The thread will read ownership info on first 2 MiB of memory, and take that ownership info to flush page or vma.
+ */
 int invalidate_mem_area(void *data) 
 {
     int ret = 0;
@@ -73,7 +77,9 @@ int invalidate_mem_area(void *data)
     return ret;
 }
 
-
+/*
+ * Find task_struct from pid_t 
+ */
 struct task_struct *get_task_from_int_pid(pid_t pid) 
 {
 	struct pid *the_pid = find_get_pid(pid);
@@ -85,6 +91,9 @@ struct task_struct *get_task_from_int_pid(pid_t pid)
 
 extern int invalidate_vma(struct vm_area_struct *vma);
 
+/*
+ * Flush a specific VMA of a PID
+ */
 int flush_mem_task(pid_t pid) 
 {
 	int ret = 0;
@@ -142,6 +151,9 @@ int flush_mem_task(pid_t pid)
 	return ret;
 }
 
+/*
+ * Flush specific page (in PTE) of a process specified by pid and pfn_to_flush
+ */
 int flush_mem_task_page(pid_t pid, unsigned long pfn_to_flush) 
 {
 	int ret = 0;

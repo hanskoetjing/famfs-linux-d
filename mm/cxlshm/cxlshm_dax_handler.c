@@ -78,6 +78,9 @@ out_path_put:
 	return err;
 }
 
+/*
+ * read ownership information on shared memory (and initializes pfn of current device)
+ */
 int read_owner_info_on_mem(char *device_path_param) 
 {
     int ret = 0;
@@ -92,6 +95,9 @@ int read_owner_info_on_mem(char *device_path_param)
 	return ret;
 }
 
+/*
+ * returns ownership information on shared memory 
+ */
 int get_owner_info_on_mem(struct ownership **owner)
 {
 	read_owner_info_on_mem(device_path);
@@ -115,6 +121,9 @@ int get_owner_info_on_mem(struct ownership **owner)
 }
 EXPORT_SYMBOL(get_owner_info_on_mem);
 
+/*
+ * create new ownership info on local memory (need to write to shared memory? please use set_owner_info_on_mem)
+ */
 int set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_start, unsigned long vm_end, unsigned long offset) 
 {
 	struct ownership *new_owner = kzalloc(sizeof(struct ownership), GFP_KERNEL);
@@ -137,6 +146,9 @@ int set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_sta
 }
 EXPORT_SYMBOL(set_new_owner_info);
 
+/*
+ * write ownership info to shared mem 
+ */
 int set_owner_info_on_mem(struct ownership *owner)
 {
 	read_owner_info_on_mem(device_path);
@@ -193,6 +205,9 @@ int process_location_info(char **address, int *port)
 
 }
 
+/*
+ * initializes cxl_dax_devices, the struct dax_devices that used for every operation(s) here 
+ */
 int get_cxl_dax_dev(char *device_path_param) 
 {
 	int char_copied_length = -1;
@@ -223,6 +238,9 @@ int get_cxl_dax_dev(char *device_path_param)
 }
 EXPORT_SYMBOL(get_cxl_dax_dev);
 
+/*
+ * get a pfn_t from dax device for a specific length 
+ */
 int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_kaddr, pfn_t *dax_pfn) 
 {
 	int ret = 0;
@@ -240,7 +258,9 @@ int alloc_mem_on_devdax(char *device_path_param, unsigned long len, void **dax_k
 }
 EXPORT_SYMBOL(alloc_mem_on_devdax);
 
-//pfn fault handler. insert the pfn as read-only, write will trigger the other func
+/*
+ * inserts a page with specific pgprot.
+ */
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot) 
 {
     int ret = 0;
@@ -256,7 +276,9 @@ vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot)
 }
 EXPORT_SYMBOL(handle_fault_on_cxldaxdev_prot);
 
-//pfn write fault handler
+/*
+ * change existing PTE into writable
+ */
 vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf) 
 {
 
@@ -284,6 +306,10 @@ vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf)
 }
 EXPORT_SYMBOL(handle_fault_on_cxldaxdev_mkwrite);
 
+
+/*
+ * get pfn from the current device. 
+ */
 unsigned long get_pfn_by_offset(unsigned long offset)
 {
 	unsigned long return_value = 0;

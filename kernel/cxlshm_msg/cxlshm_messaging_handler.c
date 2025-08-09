@@ -22,7 +22,12 @@ const char * const enum_message_value[] = {"PAGE", "WHOLE_VMA", "DONE"};
 
 int send_invalidation_message(struct ownership *owner, int type);
 
-/*return 1 on ownership taken over, otherwise error*/
+/*
+ * send invalidation message to other process
+ * the process itself can be on the same host, or another host
+ * 
+ * return 1 on ownership taken over, otherwise error
+ */
 int send_invalidation_message(struct ownership *owner, int type) 
 {
 	int ret = 0;
