@@ -238,7 +238,6 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
 static int __init cxlshm_invalidator_init(void) 
 {	
     void *data = NULL;
-    void *data_page = NULL;
     set_ownership_completion(&ownership_transfer_arrival_var);
     invalidator_thread = kthread_run(invalidate_mem_area, (void *)data, "invalidate_mem_area");
 
@@ -250,7 +249,6 @@ static int __init cxlshm_invalidator_init(void)
 static void __exit cxlshm_invalidator_exit(void) 
 {
     set_ownership_completion(NULL);
-    set_page_ownership_completion(NULL);
     if (task_is_running(invalidator_thread)) {
         pr_info(THIS_MOD "stop invalidator thread\n"); 
         kthread_stop(invalidator_thread);
