@@ -40,7 +40,7 @@ int process_location_info(char **address, int *port);
 int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
 int set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_start, unsigned long vm_end, unsigned long offset);
-pfn_t get_pfn_by_offset(u64 offset);
+unsigned long get_pfn_by_offset(unsigned long offset);
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot);
 vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf);
 
@@ -286,10 +286,10 @@ vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf)
 }
 EXPORT_SYMBOL(handle_fault_on_cxldaxdev_mkwrite);
 
-pfn_t get_pfn_by_offset(u64 offset)
+unsigned long get_pfn_by_offset(unsigned long offset)
 {
-	pfn_t pfn_for_return;
-	pfn_for_return.val = start_data_pfn.val + offset;
-	return pfn_for_return;
+	unsigned long return_value = 0;
+	return_value = pfn_t_to_pfn(start_data_pfn);
+	return return_value + offset;
 }
 EXPORT_SYMBOL(get_pfn_by_offset);

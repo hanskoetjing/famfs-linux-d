@@ -7,6 +7,13 @@
 #define DEFAULT_PORT            57580
 #define DEFAULT_HOST            "127.0.0.1"
 
+enum message_type {
+	PAGE,
+	WHOLE_VMA,
+	DONE,
+	SENTINEL_ONLY
+};
+
 extern int open_port;
 extern char message_received[MAX_BUFFER_NET];
 extern char ownership_transfer_message[MAX_BUFFER_NET];

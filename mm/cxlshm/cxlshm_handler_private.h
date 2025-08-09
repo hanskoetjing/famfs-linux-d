@@ -19,13 +19,6 @@ struct ownership { //TODO: add version to the struct...
 };
 
 
-enum message_type {
-	PAGE,
-	WHOLE_VMA,
-	DONE,
-	SENTINEL_ONLY
-};
-
 extern const char * const enum_message_value[];
 extern char this_host[MAX_LOCATION_LENGTH];
 
@@ -37,7 +30,7 @@ void get_current_device_path(char **dev_path);
 int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
 int set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_start, unsigned long vm_end, unsigned long offset);
-pfn_t get_pfn_by_offset(u64 offset);
+unsigned long get_pfn_by_offset(unsigned long offset);
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot);
 vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf);
 
