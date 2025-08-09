@@ -115,12 +115,13 @@ int flush_mem_task(pid_t pid)
             pid_t pid_on_mem = owner_on_mem->owner_pid;
             pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", pid_on_mem, owner_on_mem->vm_start);
             mas_for_each(&mas, vma, ULONG_MAX) {
+                pr_info(THIS_MOD "vm_start: 0x%lx vm_end: 0x%lx\n", vma->vm_start, vma->vm_end);
                 if (vma->vm_flags & VM_CXLSHM) 
                 {
                     this_vma = vma;
                     //invalidate_vma(vma);
                     //zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporar
-                    break;
+                    //break;
                 }
             }
             if (this_vma) 
