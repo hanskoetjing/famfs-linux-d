@@ -240,7 +240,6 @@ static int __init cxlshm_invalidator_init(void)
     void *data = NULL;
     void *data_page = NULL;
     set_ownership_completion(&ownership_transfer_arrival_var);
-    set_page_ownership_completion(&page_ownership_transfer_var);
     invalidator_thread = kthread_run(invalidate_mem_area, (void *)data, "invalidate_mem_area");
 
 	//init done
