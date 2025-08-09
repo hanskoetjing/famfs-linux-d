@@ -29,7 +29,6 @@ int change_ownership(pid_t current_owner, pid_t requestor);
 void set_host(char *host_id_string);
 int is_allottable(pid_t requestor_pid, struct vm_fault *vmf);
 void set_new_ownership(struct ownership **new_owner, char *address, int port);
-int is_allottable_page(pid_t requestor_pid, struct vm_fault *vmf);
 int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *address, int port, struct vm_fault *vmf);
 void get_location_info(char **location_info_string);
 
@@ -37,6 +36,7 @@ int is_allottable(pid_t requestor_pid, struct vm_fault *vmf)
 {
 	struct ownership *owner;
 	pr_info(THIS_MOD "is_allottable function here %d\n", requestor_pid);
+	pr_info(THIS_MOD "check if pfn 0x%llx can be written by %d\n", virt_addr, requestor_pid);
 	get_owner_info_on_mem(&owner);
 	/*ownership checking here, also ask for permission if needed*/
 	if (owner->owner_pid <= 0)
@@ -71,47 +71,6 @@ int is_allottable(pid_t requestor_pid, struct vm_fault *vmf)
 	}
 }
 EXPORT_SYMBOL(is_allottable);
-
-int is_allottable_page(pid_t requestor_pid , struct vm_fault *vmf) 
-{
-	struct ownership *owner;
-	unsigned long virt_addr = vmf->address;
-	pr_info(THIS_MOD "is_allottable function here %d\n", requestor_pid);
-	pr_info(THIS_MOD "check if pfn 0x%llx can be written by %d\n", virt_addr, requestor_pid);
-	get_owner_info_on_mem(&owner);
-	/*ownership checking here, also ask for permission if needed*/
-	if (owner->owner_pid <= 0)
-	{
-		pr_info(THIS_MOD "nobody owns this area\n");
-		set_new_owner_info(&owner, task_pid_nr(current), vmf->vma->vm_start, vmf->vma->vm_end, vmf->pgoff);
-		set_owner_info_on_mem(owner);
-		kfree(owner);
-		return requestor_pid;
-	}
-	else
-	{
-		pr_info(THIS_MOD "owner on memory: %d. Requestor pid: %d\n", owner->owner_pid, requestor_pid);
-		if (owner->owner_pid == requestor_pid)
-		{
-			/* owned by itself */
-			pr_info(THIS_MOD "owned by the caller\n");
-			return requestor_pid;
-		}
-		else
-		{
-			pr_info(THIS_MOD "owned by the other process, possibly in other host\n");
-			int ownership_transfer_status = send_invalidation_message(owner, PAGE);
-			if(ownership_transfer_status == 1)
-			{
-				set_new_owner_info(&owner, task_pid_nr(current), vmf->vma->vm_start, vmf->vma->vm_end, vmf->pgoff);
-				set_owner_info_on_mem(owner);
-			kfree(owner);
-			}
-			return requestor_pid;
-		}
-	}
-}
-EXPORT_SYMBOL(is_allottable_page);
 
 void set_host(char *host_id_string) 
 {

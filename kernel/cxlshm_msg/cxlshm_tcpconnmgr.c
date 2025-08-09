@@ -21,7 +21,6 @@ EXPORT_SYMBOL(client_lock);
 DECLARE_COMPLETION(is_complete);
 EXPORT_SYMBOL(is_complete);
 struct completion *ownership_transfer_arrived = NULL;
-struct completion *page_ownership_transfer = NULL;
 static struct socket *server_socket, *connected_client_socket, *client_socket;
 static struct sockaddr_in sin, client_sockaddr;
 static struct task_struct *acceptor_thread, *response_acceptor_thread;
@@ -42,7 +41,6 @@ int _tcp_server_start(void);
 int _tcp_server_stop(void);
 void set_port(int port_param);
 void set_ownership_completion(struct completion *param);
-void set_page_ownership_completion(struct completion *param);
 int _send_response(char *response_message);
 
 int _tcp_client_start(char *ip_4_addr, int port);
@@ -63,13 +61,6 @@ void set_ownership_completion(struct completion *param) {
 	spin_unlock(&ctr_lock);
 }
 EXPORT_SYMBOL(set_ownership_completion);
-
-void set_page_ownership_completion(struct completion *param) {
-	spin_lock(&ctr_lock);
-	page_ownership_transfer = param;
-	spin_unlock(&ctr_lock);
-}
-EXPORT_SYMBOL(set_page_ownership_completion);
 
 int _tcp_server_start(void) 
 {
