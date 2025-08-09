@@ -133,12 +133,14 @@ int flush_mem_task(pid_t pid)
                 pr_info(THIS_MOD "found vma addr: 0x%lx\n", this_vma->vm_start);
                 struct mm_struct *mm = this_vma->vm_mm;
                 struct mmu_gather tlb;
+                mmap_write_lock(mm);
                 tlb_gather_mmu(&tlb, mm);
                 change_vma_protection_range(&tlb, this_vma, this_vma->vm_start, this_vma->vm_end, PAGE_NONE, MM_CP_UFFD_WP);
                 tlb_finish_mmu(&tlb);
                 zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start);
                 flush_tlb_mm(mm);
                 flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
+                mmap_write_unlock(mm);
                 pr_info(THIS_MOD "Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
             } 
             else 
