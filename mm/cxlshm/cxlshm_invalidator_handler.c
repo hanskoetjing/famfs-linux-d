@@ -116,7 +116,7 @@ int flush_mem_task(pid_t pid)
             pr_info(THIS_MOD "pid %d vm_start: 0x%lx\n", pid_on_mem, owner_on_mem->vm_start);
             mas_for_each(&mas, vma, ULONG_MAX) {
                 pr_info(THIS_MOD "vm_start: 0x%lx vm_end: 0x%lx\n", vma->vm_start, vma->vm_end);
-                if (vma->vm_flags & VM_CXLSHM) 
+                if (vma->vm_flags & VM_CXLSHM && vma->vm_start == owner_on_mem->vm_start && vma->vm_end == owner_on_mem->vm_end) 
                 {
                     this_vma = vma;
                     //invalidate_vma(vma);
