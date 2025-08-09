@@ -244,8 +244,6 @@ EXPORT_SYMBOL(alloc_mem_on_devdax);
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot) 
 {
     int ret = 0;
-	struct ownership *owner;
-    struct vm_area_struct *vma = vmf->vma;
     pgoff_t dax_pgoff = vmf->pgoff;
     pr_info(THIS_MOD "dax area page fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 		vmf->address, vmf->pgoff);

@@ -10,6 +10,7 @@
 #include <linux/dax.h>
 #include "../../drivers/dax/dax-private.h"
 #include "../../mm/cxlshm/cxlshm_handler_private.h"
+#include "../cxlshm_msg/conn_manager.h" //for enum
 //Tong Xing @UoE
 //modified by Hans @UoE
 

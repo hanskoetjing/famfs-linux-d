@@ -28,7 +28,7 @@ DECLARE_COMPLETION(ownership_transfer_arrival_var);
 int invalidate_mem_area(void *data);
 struct task_struct *get_task_from_int_pid(pid_t pid);
 int flush_mem_task(pid_t pid);
-int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush);
+int flush_mem_task_page(pid_t pid, unsigned long pfn_to_flush);
 
 int invalidate_mem_area(void *data) 
 {
@@ -56,8 +56,8 @@ int invalidate_mem_area(void *data)
             }
             else if (message_type == PAGE)
             {
-                pfn_t p = get_pfn_by_offset((u64)owner->offset);
-                flush_mem_task_page(owner->owner_pid, p);
+                unsigned long pfn_to_flush = get_pfn_by_offset(owner->offset);
+                flush_mem_task_page(owner->owner_pid, pfn_to_flush);
             }
             ret = _send_response("DONE");
             reinit_completion(&ownership_transfer_arrival_var);
@@ -142,7 +142,7 @@ int flush_mem_task(pid_t pid)
 	return ret;
 }
 
-int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush) 
+int flush_mem_task_page(pid_t pid, unsigned long pfn_to_flush) 
 {
 	int ret = 0;
 	struct vm_area_struct *this_vma = NULL;
@@ -179,7 +179,6 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                 struct mm_struct *this_mm = this_vma->vm_mm;
                 spinlock_t *sp;
                 int found = 0;
-                unsigned long pfn_phys = get_pfn_by_offset(owner_on_mem->offset);
                 down_read(&(this_mm->mmap_lock));
                 for (addr = vma->vm_start; addr < vma->vm_end; addr += PAGE_SIZE)
                 {
@@ -198,7 +197,7 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                     pte_t temporary_pte;
                     ptep = pte_offset_map_lock(this_mm, pmd, addr, &sp);
                     temporary_pte = *ptep;
-                    if (pte_pfn(*ptep) == pfn_phys)
+                    if (pte_pfn(*ptep) == pfn_to_flush)
                     {
                         ptep_clear_flush(vma, addr, ptep);
                         found = 1;
@@ -210,7 +209,7 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                     {
                         pte_unmap_unlock(ptep, sp);
                     }
-                    pr_info(THIS_MOD "pte 0x%lx pte to flush: 0x%lx\n", pte_pfn(temporary_pte), pfn_phys);
+                    pr_info(THIS_MOD "pte 0x%lx pte to flush: 0x%lx\n", pte_pfn(temporary_pte), pfn_to_flush);
                 }
                 up_read(&(this_mm->mmap_lock));
                 if (found == 1)
