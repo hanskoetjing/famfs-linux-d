@@ -39,7 +39,7 @@ void get_current_device_path(char **dev_path);
 int process_location_info(char **address, int *port);
 int get_owner_info_on_mem(struct ownership **owner);
 int set_owner_info_on_mem(struct ownership *owner);
-void set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_start, unsigned long vm_end, unsigned long offset);
+int set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_start, unsigned long vm_end, unsigned long offset);
 pfn_t get_pfn_by_offset(u64 offset);
 vm_fault_t handle_fault_on_cxldaxdev_prot(struct vm_fault *vmf, pgprot_t pgprot);
 vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf);
@@ -115,7 +115,7 @@ int get_owner_info_on_mem(struct ownership **owner)
 }
 EXPORT_SYMBOL(get_owner_info_on_mem);
 
-void set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_start, unsigned long vm_end, unsigned long offset) 
+int set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_start, unsigned long vm_end, unsigned long offset) 
 {
 	struct ownership *new_owner = kzalloc(sizeof(struct ownership), GFP_KERNEL);
 	new_owner->owner_pid = pid;
@@ -125,7 +125,7 @@ void set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_st
 	new_owner->port = owner_port;
 	struct mm_struct *mm = current->mm;
 	if (mm == NULL) 
-		return -1;
+		return -EINVAL;
 	new_owner->vm_start = vm_start;
 	new_owner->vm_end = vm_end;
 	new_owner->offset = offset;
@@ -133,6 +133,7 @@ void set_new_owner_info(struct ownership **owner, pid_t pid, unsigned long vm_st
 	strscpy(new_owner->ip_4_addr, ip_4_addr, 16);
 	*owner = new_owner;
 	kfree(ip_4_addr);
+	return 0;
 }
 EXPORT_SYMBOL(set_new_owner_info);
 
