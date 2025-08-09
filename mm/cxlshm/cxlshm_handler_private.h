@@ -43,7 +43,7 @@ vm_fault_t handle_fault_on_cxldaxdev_mkwrite(struct vm_fault *vmf);
 
 
 //ownership handler
-int is_allottable(pid_t requestor_pid, struct vm_fault *vmf);
+int is_allottable(pid_t requestor_pid, struct vm_fault *vmf, int type);
 int ask_for_permission(pid_t existing_owner, pid_t requestor_pid, char *address, int port);
 void get_location_info(char **location_info_string);
 

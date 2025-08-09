@@ -40,7 +40,7 @@ static vm_fault_t cxl_dsm_mkwrite_handler(struct vm_fault *vmf)
 	pr_info(THIS_MOD "mkwrite fault at user address 0x%lx (pgoff from userspace 0x%lx)\n",
 	vmf->address, vmf->pgoff);
 	
-	writable_by_this_process = is_allottable(task_pid_nr(current), vmf);
+	writable_by_this_process = is_allottable(task_pid_nr(current), vmf, PAGE);
 
 	if (writable_by_this_process)
 	{

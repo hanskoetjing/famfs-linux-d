@@ -27,12 +27,12 @@ EXPORT_SYMBOL(this_host);
 
 int change_ownership(pid_t current_owner, pid_t requestor);
 void set_host(char *host_id_string);
-int is_allottable(pid_t requestor_pid, struct vm_fault *vmf);
+int is_allottable(pid_t requestor_pid, struct vm_fault *vmf, int type);
 void set_new_ownership(struct ownership **new_owner, char *address, int port);
 int ask_for_permission_page(pid_t existing_owner, pid_t requestor_pid, char *address, int port, struct vm_fault *vmf);
 void get_location_info(char **location_info_string);
 
-int is_allottable(pid_t requestor_pid, struct vm_fault *vmf) 
+int is_allottable(pid_t requestor_pid, struct vm_fault *vmf, int type) 
 {
 	struct ownership *owner;
 	pr_info(THIS_MOD "is_allottable function here %d\n", requestor_pid);
