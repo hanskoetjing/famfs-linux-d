@@ -36,7 +36,6 @@ int is_allottable(pid_t requestor_pid, struct vm_fault *vmf)
 {
 	struct ownership *owner;
 	pr_info(THIS_MOD "is_allottable function here %d\n", requestor_pid);
-	pr_info(THIS_MOD "check if pfn 0x%llx can be written by %d\n", virt_addr, requestor_pid);
 	get_owner_info_on_mem(&owner);
 	/*ownership checking here, also ask for permission if needed*/
 	if (owner->owner_pid <= 0)

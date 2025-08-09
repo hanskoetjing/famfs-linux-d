@@ -23,9 +23,7 @@
 #define THIS_MOD "cxlshm_invalidator_internal: "
 
 static struct task_struct *invalidator_thread;
-static struct task_struct *page_invalidator_thread;
 DECLARE_COMPLETION(ownership_transfer_arrival_var);
-DECLARE_COMPLETION(page_ownership_transfer_var);
 
 int invalidate_mem_area(void *data);
 struct task_struct *get_task_from_int_pid(pid_t pid);
@@ -59,7 +57,6 @@ int invalidate_mem_area(void *data)
             else if (message_type == PAGE)
             {
                 pfn_t p = get_pfn_by_offset((u64)owner->offset);
-                pr_info(THIS_MOD "pfn on this: 0x%llx");
                 flush_mem_task_page(owner->owner_pid, p);
             }
             ret = _send_response("DONE");
@@ -199,7 +196,7 @@ int flush_mem_task_page(pid_t pid, pfn_t pfn_to_flush)
                     if (pmd_none(*pmd) || pmd_bad(*pmd))
                         continue;
                     ptep = pte_offset_map_lock(this_mm, pmd, addr, &sp);
-                    pr_info(THIS_MOD "pte 0x%llx pte to flush: 0x%llx\n", pte_pfn(*ptep), pfn_phys);
+                    pr_info(THIS_MOD "pte 0x%llx pte to flush: 0x%lx\n", pte_pfn(*ptep), pfn_phys);
                     if (pte_pfn(*ptep) == pfn_phys)
                     {
                         ptep_clear_flush(vma, addr, ptep);
