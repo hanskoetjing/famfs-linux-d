@@ -122,8 +122,9 @@ int flush_mem_task(pid_t pid)
                     this_vma = vma;
                     struct mm_struct *mm = vma->vm_mm;
                     struct mmu_gather tlb;
-                    mmap_write_lock(mm);
                     invalidate_vma(vma);
+                    mmap_write_lock(mm);
+                    //invalidate_vma(vma);
                     zap_vma_ptes(vma, vma->vm_start, vma->vm_end - vma->vm_start); //temporar
                     flush_cache_range(vma, vma->vm_start, vma->vm_end);
                     flush_tlb_mm(mm);
