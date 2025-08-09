@@ -117,19 +117,20 @@ int flush_mem_task(pid_t pid)
                 if (vma->vm_flags & VM_CXLSHM) 
                 {
                     this_vma = vma;
-                    pr_info(THIS_MOD "found vma addr: 0x%lx\n", vma->vm_start);
-                    
-                    invalidate_vma(vma);
-
-                    
-                    flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
-                    zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporary
-                    
+                    //invalidate_vma(vma);
+                    //zap_vma_ptes(this_vma, this_vma->vm_start, this_vma->vm_end - this_vma->vm_start); //temporar
                     break;
                 }
             }
             if (this_vma) 
             {
+                pr_info(THIS_MOD "found vma addr: 0x%lx\n", this_vma->vm_start);
+                struct mm_struct *mm = this_vma->vm_mm;
+                struct mmu_gather tlb;
+                tlb_gather_mmu(&tlb, mm);
+                change_protection(&tlb, this_vma, this_vma->vm_start, this_vma->vm_end, PAGE_NONE, MM_CP_UFFD_WP);
+                tlb_finish_mmu(&tlb);
+                flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
                 pr_info(THIS_MOD "Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
             } 
             else 
