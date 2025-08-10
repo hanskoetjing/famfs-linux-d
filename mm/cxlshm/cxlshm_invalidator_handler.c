@@ -123,9 +123,9 @@ int flush_mem_task(pid_t pid)
                     struct mm_struct *mm = vma->vm_mm;
                     struct mmu_gather tlb;
                     invalidate_vma(vma);
-                    zap_vma_ptes(vma, vma->vm_start, vma->vm_end - vma->vm_start); //temporar
-                    flush_cache_range(vma, vma->vm_start, vma->vm_end);
-                    flush_tlb_mm(mm);
+                    //zap_vma_ptes(vma, vma->vm_start, vma->vm_end - vma->vm_start); //temporar
+                    //flush_cache_range(vma, vma->vm_start, vma->vm_end);
+                    //flush_tlb_mm(mm);
                     /*mmap_write_lock(mm);
                     //invalidate_vma(vma);
                     zap_vma_ptes(vma, vma->vm_start, vma->vm_end - vma->vm_start); //temporar
@@ -137,12 +137,38 @@ int flush_mem_task(pid_t pid)
                     tlb_finish_mmu(&tlb);
                     mmap_write_lock(mm);
                     */
+                    
                     pr_info(THIS_MOD "found vma addr: 0x%lx\n", this_vma->vm_start);
                     break;
                 }
             }
             if (this_vma) 
             {
+                spinlock_t *sp;
+                pr_info(THIS_MOD "pte 0x%lx pte to flush: 0x%lx\n", pte_pfn(temporary_pte), pfn_to_flush);
+                struct mm_struct *this_mm = this_vma->vm_mm;
+                down_read(&(this_mm->mmap_lock));
+                unsigned long addr = 0;
+                for (addr = this_vma->vm_start; addr < this_vma->vm_end; addr += PAGE_SIZE)
+                {
+                    pgd_t *pgd = pgd_offset(this_mm, addr);
+                    if (pgd_none(*pgd) || pgd_bad(*pgd))
+                        continue;
+                    p4d_t *p4d = p4d_offset(pgd, addr);
+                    if (p4d_none(*p4d) || p4d_bad(*p4d))
+                        continue;
+                    pud_t *pud = pud_offset(p4d, addr);
+                    if (pud_none(*pud) || pud_bad(*pud))
+                        continue;
+                    pmd_t *pmd = pmd_offset(pud, addr);
+                    if (pmd_none(*pmd) || pmd_bad(*pmd))
+                        continue;
+                    pte_t *ptep = pte_offset_map_lock(this_mm, pmd, addr, &sp);
+                    ptep_clear_flush(this_vma, addr, ptep);
+                    spin_unlock(sp);
+                    rcu_read_unlock();
+                }
+                up_read(&(this_mm->mmap_lock));
                 pr_info(THIS_MOD "Flush CPU cache. Size: %ld\n", this_vma->vm_end - this_vma->vm_start);
             } 
             else 
