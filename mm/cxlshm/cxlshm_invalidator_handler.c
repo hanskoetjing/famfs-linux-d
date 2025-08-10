@@ -120,30 +120,16 @@ int flush_mem_task(pid_t pid)
                 if (vma->vm_flags & VM_CXLSHM && vma->vm_start == owner_on_mem->vm_start && vma->vm_end == owner_on_mem->vm_end) 
                 {
                     this_vma = vma;
-                    struct mm_struct *mm = vma->vm_mm;
-                    struct mmu_gather tlb;
-                    invalidate_vma(vma);
-                    //zap_vma_ptes(vma, vma->vm_start, vma->vm_end - vma->vm_start); //temporar
-                    //flush_cache_range(vma, vma->vm_start, vma->vm_end);
-                    //flush_tlb_mm(mm);
-                    /*mmap_write_lock(mm);
-                    //invalidate_vma(vma);
-                    zap_vma_ptes(vma, vma->vm_start, vma->vm_end - vma->vm_start); //temporar
-                    flush_cache_range(vma, vma->vm_start, vma->vm_end);
-                    flush_tlb_mm(mm);
-                    flush_cache_range(this_vma, this_vma->vm_start, this_vma->vm_end);
-                    tlb_gather_mmu(&tlb, mm);
-                    change_vma_protection_range(&tlb, this_vma, this_vma->vm_start, this_vma->vm_end, PAGE_NONE, MM_CP_UFFD_WP);
-                    tlb_finish_mmu(&tlb);
-                    mmap_write_lock(mm);
-                    */
-                    
+                    invalidate_vma(vma); 
                     pr_info(THIS_MOD "found vma addr: 0x%lx\n", this_vma->vm_start);
                     break;
                 }
             }
             if (this_vma) 
             {
+                /*
+                 * flushing entire pte of this VMA 
+                 */
                 spinlock_t *sp;
                 struct mm_struct *this_mm = this_vma->vm_mm;
                 down_read(&(this_mm->mmap_lock));
