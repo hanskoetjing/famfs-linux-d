@@ -145,7 +145,6 @@ int flush_mem_task(pid_t pid)
             if (this_vma) 
             {
                 spinlock_t *sp;
-                pr_info(THIS_MOD "pte 0x%lx pte to flush: 0x%lx\n", pte_pfn(temporary_pte), pfn_to_flush);
                 struct mm_struct *this_mm = this_vma->vm_mm;
                 down_read(&(this_mm->mmap_lock));
                 unsigned long addr = 0;
